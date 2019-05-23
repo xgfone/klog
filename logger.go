@@ -46,6 +46,33 @@ func New(w ...Writer) Logger {
 	return Logger{writer: out, level: LvlDebug, encoder: TextEncoder()}
 }
 
+// NewSimpleLogger returns a new Logger based on the file writer by using
+// `SizedRotatingFile`.
+//
+// If filePath is "", it will ignore fileSize and fileNum, and use os.Stdout
+// as the writer. If fileSize is "", it is "100M" by default. And fileNum is
+// 100 by default.
+func NewSimpleLogger(level, filePath, fileSize string, fileNum int) (Logger, error) {
+	lvl := NameToLevel(level)
+	if filePath == "" {
+		return New().WithLevel(lvl), nil
+	}
+
+	size, err := ParseSize(fileSize)
+	if err != nil {
+		return Logger{}, err
+	} else if fileNum < 1 {
+		fileNum = 100
+	}
+
+	file, err := NewSizedRotatingFile(filePath, int(size), fileNum)
+	if err != nil {
+		return Logger{}, err
+	}
+	AppendCleaner(func() { file.Close() })
+	return New(StreamWriter(file)).WithLevel(lvl), nil
+}
+
 func (l Logger) clone() Logger {
 	return Logger{
 		name:    l.name,

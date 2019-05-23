@@ -136,6 +136,23 @@ func main() {
 }
 ```
 
+If you want to use `SizedRotatingFile` as the writer, `NewSimpleLogger` maybe is your better choice.
+
+```go
+package main
+
+import "github.com/xgfone/klog"
+
+func main() {
+	log, _ := klog.NewSimpleLogger("warn", "test.log", "100M", 100)
+
+	log.Info().Print("don't output")
+	log.Error().Printf("will output %s %s", "key", "value")
+
+	// Output to test.log:
+	// t=2019-05-23T17:20:45.0741975+08:00 lvl=ERROR msg=will output key value
+}
+```
 
 ### Lazy evaluation
 
