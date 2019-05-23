@@ -173,7 +173,7 @@ func main() {
 	log.Info().K("stack", klog.CallerStack()).Msg("hello world")
 
 	// Output:
-	// t=2019-05-22T16:41:03.1281272+08:00 lvl=INFO caller=main.go:9 stack=[main.go:9] msg=hello world
+	// t=2019-05-22T16:41:03.1281272+08:00 lvl=INFO caller=main.go:7 stack=[main.go:7] msg=hello world
 }
 ```
 
