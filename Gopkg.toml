@@ -1,0 +1,3 @@
+[[constraint]]
+    name = "github.com/go-stack/stack"
+    version = "v1.8.0"
