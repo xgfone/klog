@@ -29,30 +29,57 @@ var fileFlag = os.O_CREATE | os.O_APPEND | os.O_WRONLY
 
 // Writer is the interface to write the log to the underlying storage.
 type Writer interface {
+	io.Closer
 	Write(level Level, data []byte) (n int, err error)
 }
 
-type ioWriterFunc func(Level, []byte) (int, error)
-
-func (w ioWriterFunc) Write(p []byte) (int, error) {
-	return w(maxLevel, p)
+type ioWriter struct {
+	w Writer
 }
 
-// FromWriter converts Writer to io.Writer.
-func FromWriter(w Writer) io.Writer {
-	return ioWriterFunc(w.Write)
+// Writer implements io.Writer.
+func (w ioWriter) Write(p []byte) (int, error) {
+	return w.w.Write(maxLevel, p)
 }
 
-type writerFunc func(Level, []byte) (int, error)
+// Close implements io.Closer.
+func (w ioWriter) Close() error {
+	return w.Close()
+}
 
-// Write implements Writer.
+// FromWriter converts Writer to io.WriteCloser.
+func FromWriter(w Writer) io.WriteCloser {
+	return ioWriter{w: w}
+}
+
+type writerFunc struct {
+	close func() error
+	write func(Level, []byte) (int, error)
+}
+
+// Write implements Writer#Write().
 func (w writerFunc) Write(level Level, data []byte) (int, error) {
-	return w(level, data)
+	return w.write(level, data)
 }
 
-// WriterFunc adapts a function to Writer.
-func WriterFunc(f func(Level, []byte) (int, error)) Writer {
-	return writerFunc(f)
+// Close implements io.Closer.
+func (w writerFunc) Close() error {
+	if w.close != nil {
+		return w.close()
+	}
+	return nil
+}
+
+// WriterFunc adapts a function with w to Writer.
+//
+// If giving the close function, it will be called when closing the writer.
+// Or do nothing.
+func WriterFunc(w func(Level, []byte) (int, error), close ...func() error) Writer {
+	var closer func() error
+	if len(close) > 0 {
+		closer = close[0]
+	}
+	return writerFunc{close: closer, write: w}
 }
 
 // DiscardWriter discards all the data.
@@ -67,11 +94,13 @@ func LevelWriter(lvl Level, w Writer) Writer {
 			return 0, nil
 		}
 		return w.Write(level, p)
-	})
+	}, w.Close)
 }
 
 // SafeWriter is guaranteed that only a single writing operation can proceed
 // at a time.
+//
+// The returned Writer supports io.Closer, which will be forwarded to w.Close().
 //
 // It's necessary for thread-safe concurrent writes.
 func SafeWriter(w Writer) Writer {
@@ -80,63 +109,80 @@ func SafeWriter(w Writer) Writer {
 		mu.Lock()
 		defer mu.Unlock()
 		return w.Write(level, p)
-	})
+	}, w.Close)
 }
 
 // StreamWriter converts io.Writer to Writer.
+//
+// If w has implemented io.Closer, the returned writer will forward the Close
+// calling to it. Or do nothing.
 func StreamWriter(w io.Writer) Writer {
 	return WriterFunc(func(level Level, p []byte) (int, error) {
 		return w.Write(p)
+	}, func() error {
+		if closer, ok := w.(io.Closer); ok {
+			return closer.Close()
+		}
+		return nil
 	})
 }
 
 // NetWriter opens a socket to the given address and writes the log
 // over the connection.
-func NetWriter(network, addr string) (Writer, io.Closer, error) {
+//
+// Notice: it will be wrapped by SafeWriter, so it's thread-safe.
+func NetWriter(network, addr string) (Writer, error) {
 	conn, err := net.Dial(network, addr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return SafeWriter(StreamWriter(conn)), conn, nil
+	return SafeWriter(StreamWriter(conn)), nil
 }
 
 // ReopenWriter returns a writer that can be closed then re-opened,
 // which is used for logrotate typically.
 //
-// Notice: it used SafeWriter to wrap the writer, so it's thread-safe.
-func ReopenWriter(factory func() (w io.WriteCloser, reopen <-chan bool, err error)) (Writer, error) {
-	w, reopen, err := factory()
-	if err != nil {
-		return nil, err
-	}
+// Notice: It's thread-safe.
+func ReopenWriter(factory func() (w io.WriteCloser, reopen <-chan bool, err error)) Writer {
+	var w io.WriteCloser
+	var err error
+	var reopen <-chan bool
+	var lock sync.Mutex
 
-	close := func() error {
-		if w != nil {
-			w.Close()
-		}
-		w = nil
-		reopen = nil
-		return err
-	}
+	return WriterFunc(func(level Level, p []byte) (int, error) {
+		lock.Lock()
+		defer lock.Unlock()
 
-	writer := WriterFunc(func(level Level, p []byte) (int, error) {
 		if reopen == nil {
 			if w, reopen, err = factory(); err != nil {
-				return 0, close()
+				w = nil
+				reopen = nil
+				return 0, err
 			}
+		} else if w == nil {
+			return 0, errors.New("the writer has been closed")
 		}
 
 		select {
 		case <-reopen:
 			w.Close()
 			if w, reopen, err = factory(); err != nil {
-				return 0, close()
+				w = nil
+				reopen = nil
+				return 0, err
 			}
 		default:
 		}
 		return w.Write(p)
+	}, func() (err error) {
+		lock.Lock()
+		defer lock.Unlock()
+		if w != nil {
+			err = w.Close()
+			w = nil
+		}
+		return
 	})
-	return SafeWriter(writer), nil
 }
 
 // MultiWriter writes one data to more than one destination.
@@ -145,6 +191,13 @@ func MultiWriter(outs ...Writer) Writer {
 		for _, out := range outs {
 			if m, e := out.Write(level, p); e != nil {
 				n = m
+				err = e
+			}
+		}
+		return
+	}, func() (err error) {
+		for _, w := range outs {
+			if e := w.Close(); e != nil {
 				err = e
 			}
 		}
@@ -164,6 +217,13 @@ func FailoverWriter(outs ...Writer) Writer {
 		for _, out := range outs {
 			if n, err = out.Write(level, p); err == nil {
 				return
+			}
+		}
+		return
+	}, func() (err error) {
+		for _, w := range outs {
+			if e := w.Close(); e != nil {
+				err = e
 			}
 		}
 		return
