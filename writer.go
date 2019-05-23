@@ -27,6 +27,31 @@ import (
 var maxLevel = Level(math.MaxInt32)
 var fileFlag = os.O_CREATE | os.O_APPEND | os.O_WRONLY
 
+// Errors is used to wrap more than one error.
+type Errors []error
+
+func (es Errors) Error() string {
+	buf := getBuilder()
+	es.WriteTo(buf)
+	s := buf.String()
+	putBuilder(buf)
+	return s
+}
+
+// WriteTo implements io.WriteTo.
+func (es Errors) WriteTo(w io.Writer) (n int64, err error) {
+	for i, e := range es {
+		if e != nil {
+			m, _err := fmt.Fprintf(w, "[%d]%s; ", i, e.Error())
+			if _err != nil {
+				return n + int64(m), _err
+			}
+			n += int64(m)
+		}
+	}
+	return
+}
+
 // Writer is the interface to write the log to the underlying storage.
 type Writer interface {
 	io.Closer
@@ -187,21 +212,32 @@ func ReopenWriter(factory func() (w io.WriteCloser, reopen <-chan bool, err erro
 
 // MultiWriter writes one data to more than one destination.
 func MultiWriter(outs ...Writer) Writer {
+	_len := len(outs)
 	return WriterFunc(func(level Level, p []byte) (n int, err error) {
-		for _, out := range outs {
+		var errs Errors
+		for i, out := range outs {
 			if m, e := out.Write(level, p); e != nil {
-				n = m
-				err = e
+				n += m
+				if errs == nil {
+					errs = make(Errors, _len)
+				}
+				errs[i] = e
+			} else {
+				n += m
 			}
 		}
-		return
-	}, func() (err error) {
-		for _, w := range outs {
+		return n, errs
+	}, func() error {
+		var errs Errors
+		for i, w := range outs {
 			if e := w.Close(); e != nil {
-				err = e
+				if errs == nil {
+					errs = make(Errors, _len)
+				}
+				errs[i] = e
 			}
 		}
-		return
+		return errs
 	})
 }
 
@@ -213,6 +249,7 @@ func MultiWriter(outs ...Writer) Writer {
 // writing to a file if the network fails, and then to standard out
 // if the file write fails.
 func FailoverWriter(outs ...Writer) Writer {
+	_len := len(outs)
 	return WriterFunc(func(level Level, p []byte) (n int, err error) {
 		for _, out := range outs {
 			if n, err = out.Write(level, p); err == nil {
@@ -220,13 +257,17 @@ func FailoverWriter(outs ...Writer) Writer {
 			}
 		}
 		return
-	}, func() (err error) {
-		for _, w := range outs {
+	}, func() error {
+		var errs Errors
+		for i, w := range outs {
 			if e := w.Close(); e != nil {
-				err = e
+				if errs == nil {
+					errs = make(Errors, _len)
+				}
+				errs[i] = e
 			}
 		}
-		return
+		return errs
 	})
 }
 
