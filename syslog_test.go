@@ -22,11 +22,11 @@ import (
 )
 
 func TestSyslogWriter(t *testing.T) {
-	w, closer, err := SyslogWriter(syslog.LOG_DEBUG, "testsyslog")
+	w, err := SyslogWriter(syslog.LOG_DEBUG, "testsyslog")
 	if err != nil {
 		t.Error(err)
 	} else {
-		defer closer.Close()
+		defer w.Close()
 		New(w).Info().Msgf("test %s %s", "syslog", "writer")
 	}
 

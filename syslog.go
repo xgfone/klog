@@ -18,7 +18,6 @@ package klog
 
 import (
 	"bytes"
-	"io"
 	"log/syslog"
 )
 
@@ -48,22 +47,27 @@ func (s syslogWriter) Write(level Level, p []byte) (n int, err error) {
 	return
 }
 
+// Close implements io.Closer.
+func (s syslogWriter) Close() error {
+	return s.w.Close()
+}
+
 // SyslogWriter opens a connection to the system syslog daemon
 // by calling syslog.New and writes all logs to it.
-func SyslogWriter(priority syslog.Priority, tag string) (Writer, io.Closer, error) {
+func SyslogWriter(priority syslog.Priority, tag string) (Writer, error) {
 	w, err := syslog.New(priority, tag)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return syslogWriter{w}, w, nil
+	return syslogWriter{w}, nil
 }
 
 // SyslogNetWriter opens a connection to a log daemon over the network
 // and writes all logs to it.
-func SyslogNetWriter(net, addr string, priority syslog.Priority, tag string) (Writer, io.Closer, error) {
+func SyslogNetWriter(net, addr string, priority syslog.Priority, tag string) (Writer, error) {
 	w, err := syslog.Dial(net, addr, priority, tag)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return syslogWriter{w}, w, nil
+	return syslogWriter{w}, nil
 }

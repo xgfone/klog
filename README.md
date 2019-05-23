@@ -102,6 +102,7 @@ func main() {
 
 ```go
 type Writer interface {
+	io.Closer
 	Write(level Level, data []byte) (n int, err error)
 }
 ```
