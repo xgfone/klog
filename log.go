@@ -16,6 +16,7 @@ package klog
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 )
@@ -59,7 +60,7 @@ func newLog(logger Logger, level Level, depth int) Log {
 	}
 
 	var fields []Field
-	if ok || len(logger.fields) > 0 {
+	if ok {
 		fields = append(fieldPool.Get().([]Field), logger.fields...)
 	}
 	return Log{fields: fields, logger: logger, level: level, depth: depth, ok: ok}
@@ -153,4 +154,16 @@ func (l Log) emit(msg string) {
 	}
 	fieldPool.Put(l.fields[:0])
 	putBuilder(buf)
+
+	if l.level >= LvlFatal {
+		for _, clean := range cleaners {
+			if clean != nil {
+				clean()
+			}
+		}
+		os.Exit(1)
+	} else if l.level >= LvlPanic {
+		record.Fields = nil
+		panic(record)
+	}
 }

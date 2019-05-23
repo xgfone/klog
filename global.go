@@ -14,6 +14,14 @@
 
 package klog
 
+var cleaners []func()
+
+// AppendCleaner appends the clean functions, which will be called when emitting
+// the FATAL log.
+func AppendCleaner(clean ...func()) {
+	cleaners = append(cleaners, clean...)
+}
+
 // Std is the global default Logger.
 var Std = New()
 

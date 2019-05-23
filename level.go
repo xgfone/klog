@@ -20,9 +20,17 @@ import (
 	"strings"
 )
 
-// Predefine some levels
+// Predefine some levels.
+//
+// You can define yourself level.
+//
+// For LvlFatal or higher, it will emit the log and call the clean functions
+// firstly, then the program will exit by calling `os.Exit(1)`.
+//
+// For LvlPanic or higher, it will emit the log firstly, then panic with Record,
+// but the field Fields is reset to nil.
 const (
-	LvlTrace Level = iota * 10
+	LvlTrace Level = iota * 100
 	LvlDebug
 	LvlInfo
 	LvlWarn
