@@ -28,18 +28,17 @@ type syslogWriter struct {
 
 func (s syslogWriter) Write(level Level, p []byte) (n int, err error) {
 	v := string(bytes.TrimSpace(p))
-	switch level {
-	case LvlFatal:
+	if level >= LvlFatal {
 		err = s.w.Emerg(v)
-	case LvlPanic:
+	} else if level >= LvlPanic {
 		err = s.w.Crit(v)
-	case LvlError:
+	} else if level >= LvlError {
 		err = s.w.Err(v)
-	case LvlWarn:
+	} else if level >= LvlWarn {
 		err = s.w.Warning(v)
-	case LvlInfo:
+	} else if level >= LvlInfo {
 		err = s.w.Info(v)
-	default:
+	} else {
 		err = s.w.Debug(v)
 	}
 
