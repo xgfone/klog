@@ -29,13 +29,15 @@ package main
 import "github.com/xgfone/klog"
 
 func main() {
-	log := klog.New().WithLevel(klog.LvlWarn)
+	log := klog.New().WithLevel(klog.LvlWarn).WithKv("key1", "value1")
 
-	log.Info().K("key", "value").Msg("don't output")
-	log.Error().K("key", "value").Msgf("will output %s", "placeholder")
+	field1 := klog.Field{Key: "key2", Value: "value2"}
+	field2 := klog.Field{Key: "key3", Value: "value3"}
+	log.Info().K("key4", "value4").Print("don't output")
+	log.Error(field1, field2).K("key4", "value4").Printf("will output %s", "placeholder")
 
 	// Output:
-	// t=2019-05-22T16:05:56.2318273+08:00 lvl=ERROR key=value msg=will output placeholder
+	// t=2019-05-23T10:36:06.8399426+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
 }
 ```
 
