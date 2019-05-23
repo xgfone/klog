@@ -14,11 +14,11 @@ Now `klog` requires Go `1.x`.
 
 ## Features
 
+- The better performance.
 - Lazy evaluation of expensive operations.
 - Simple, Flexible, Extensible, Powerful and Structured.
-- Built-in support for logging to files, syslog, and the network.
 - Child loggers which inherit and add their own private context.
-- Support lots of `Writer`, such as `StreamWriter`, `NetWriter`, `SyslogWriter`, `SizedRotatingFile`, etc.
+- Built-in support for logging to files, syslog, and the network. See `Writer`.
 
 
 ## Example

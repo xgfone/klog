@@ -36,6 +36,8 @@ type Logger struct {
 }
 
 // New returns a new Logger with the writer w that is os.Stdout by default.
+//
+// The default level is `LvlDebug`, and the default encoder is `TextEncoder()`.
 func New(w ...Writer) Logger {
 	out := StreamWriter(os.Stdout)
 	if len(w) > 0 && w[0] != nil {

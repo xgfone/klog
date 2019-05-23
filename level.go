@@ -61,6 +61,8 @@ func (l Level) MarshalJSON() ([]byte, error) {
 }
 
 // NameToLevel returns the Level by the name, which is case Insensitive.
+//
+// If not panic, it will return `LvlInfo` instead if no level named `name`.
 func NameToLevel(name string, defaultPanic ...bool) Level {
 	for k, v := range Levels {
 		if v == name {
