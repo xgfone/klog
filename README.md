@@ -165,35 +165,21 @@ func main() {
 type Hook func(name string, level Level) bool
 ```
 
-You can use the hook to filter or count logs. There are two built-in hooks, `DisableLogger` and `EnableLogger`.
+You can use the hook to filter or count logs. There are four built-in hooks, `DisableLogger`, `EnableLogger`, `DisableLoggerFromEnv` and `EnableLoggerFromEnv`.
 
 ```go
 package main
 
-import (
-	"os"
-
-	"github.com/xgfone/klog"
-)
+import "github.com/xgfone/klog"
 
 func main() {
-	var debug bool
-	for _, env := range os.Environ() {
-		if env == "debug=on" || env == "debug=1" {
-			debug = true
-			break
-		}
-	}
-
-	if !debug {
-		klog.Std = klog.Std.WithHook(klog.DisableLogger("debug"))
-	}
+	klog.Std = klog.Std.WithHook(klog.EnableLoggerFromEnv("mod"))
 
 	log := klog.Std.WithName("debug")
 	log.Info().Msg("hello world")
 
 	// $ go run main.go  # No output
-	// $ debug=on go run main.go
+	// $ mod=debug=1 go run main.go
 	// t=2019-05-22T17:07:20.2504266+08:00 logger=debug lvl=INFO msg=hello world
 }
 ```
