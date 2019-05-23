@@ -16,7 +16,7 @@ package klog
 
 import "testing"
 
-func BenchmarkKlogNothingEncoder(b *testing.B) {
+func BenchmarkKlogLNothingEncoder(b *testing.B) {
 	logger := New(DiscardWriter()).WithEncoder(NothingEncoder())
 
 	b.ReportAllocs()
@@ -28,7 +28,7 @@ func BenchmarkKlogNothingEncoder(b *testing.B) {
 	})
 }
 
-func BenchmarkKlogTextEncoder(b *testing.B) {
+func BenchmarkKlogLTextEncoder(b *testing.B) {
 	logger := New(DiscardWriter())
 
 	b.ReportAllocs()
@@ -40,7 +40,7 @@ func BenchmarkKlogTextEncoder(b *testing.B) {
 	})
 }
 
-func BenchmarkKlogJSONEncoder(b *testing.B) {
+func BenchmarkKlogLJSONEncoder(b *testing.B) {
 	logger := New(DiscardWriter()).WithEncoder(JSONEncoder())
 
 	b.ReportAllocs()
@@ -52,7 +52,7 @@ func BenchmarkKlogJSONEncoder(b *testing.B) {
 	})
 }
 
-func BenchmarkKlogStdJSONEncoder(b *testing.B) {
+func BenchmarkKlogLStdJSONEncoder(b *testing.B) {
 	logger := New(DiscardWriter()).WithEncoder(StdJSONEncoder())
 
 	b.ReportAllocs()
@@ -60,6 +60,56 @@ func BenchmarkKlogStdJSONEncoder(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Info().K("key", "vlaue").Msg("message")
+		}
+	})
+}
+
+////////
+
+func BenchmarkKlogFNothingEncoder(b *testing.B) {
+	logger := New(DiscardWriter()).WithEncoder(NothingEncoder())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.K("key", "vlaue").Info("message")
+		}
+	})
+}
+
+func BenchmarkKlogFTextEncoder(b *testing.B) {
+	logger := New(DiscardWriter())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.K("key", "vlaue").Info("message")
+		}
+	})
+}
+
+func BenchmarkKlogFJSONEncoder(b *testing.B) {
+	logger := New(DiscardWriter()).WithEncoder(JSONEncoder())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.K("key", "vlaue").Info("message")
+		}
+	})
+}
+
+func BenchmarkKlogFStdJSONEncoder(b *testing.B) {
+	logger := New(DiscardWriter()).WithEncoder(StdJSONEncoder())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.K("key", "vlaue").Info("message")
 		}
 	})
 }

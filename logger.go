@@ -176,6 +176,17 @@ func (l Logger) GetWriter() Writer {
 	return l.writer
 }
 
+// F appends a key-value field log and returns another log interface
+// to emit the level log.
+func (l Logger) F(fields ...Field) LLog {
+	return newLLog(l, l.depth, fields...)
+}
+
+// K is equal to F(Field{Key: key, Value: value}).
+func (l Logger) K(key string, value interface{}) LLog {
+	return l.F(Field{Key: key, Value: value})
+}
+
 func (l Logger) emit(level Level, fields ...Field) Log {
 	return newLog(l, level, l.depth).F(fields...)
 }

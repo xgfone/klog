@@ -25,6 +25,12 @@ func AppendCleaner(clean ...func()) {
 // Std is the global default Logger.
 var Std = New()
 
+// F is equal to Std.F(fields...).
+func F(fields ...Field) LLog { return Std.F(fields...) }
+
+// K is equal to Std.K(key, value).
+func K(key string, value interface{}) LLog { return Std.K(key, value) }
+
 // L emits a customized level log.
 func L(level Level, fields ...Field) Log { return Std.L(level, fields...) }
 

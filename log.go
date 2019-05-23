@@ -129,41 +129,120 @@ func (l Log) Msgf(format string, args ...interface{}) {
 }
 
 func (l Log) emit(msg string) {
+	emitLog(l.logger, l.level, l.depth, msg, l.fields)
+}
+
+func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) {
 	record := Record{
 		Msg:    msg,
 		Time:   time.Now(),
-		Name:   l.logger.name,
-		Level:  l.level,
-		Depth:  l.depth + 2,
-		Fields: l.fields,
+		Name:   logger.name,
+		Level:  level,
+		Depth:  depth + 3,
+		Fields: fields,
 	}
 
-	for i, field := range l.fields {
+	for i, field := range fields {
 		switch v := field.Value.(type) {
 		case Valuer:
-			l.fields[i].Value = v(record)
+			fields[i].Value = v(record)
 		case func(Record) interface{}:
-			l.fields[i].Value = v(record)
+			fields[i].Value = v(record)
 		}
 	}
 
 	buf := getBuilder()
-	l.logger.encoder(buf, record)
+	logger.encoder(buf, record)
 	if bs := buf.Bytes(); len(bs) > 0 {
-		l.logger.writer.Write(l.level, bs)
+		logger.writer.Write(level, bs)
 	}
-	fieldPool.Put(l.fields[:0])
+	fieldPool.Put(fields[:0])
 	putBuilder(buf)
 
-	if l.level >= LvlFatal {
+	if level >= LvlFatal {
 		for _, clean := range cleaners {
 			if clean != nil {
 				clean()
 			}
 		}
 		os.Exit(1)
-	} else if l.level >= LvlPanic {
+	} else if level >= LvlPanic {
 		record.Fields = nil
 		panic(record)
 	}
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+func (l LLog) emit(level Level, format string, args ...interface{}) {
+	if level < l.logger.level {
+		return
+	}
+
+	ok := true
+	for _, hook := range l.logger.hooks {
+		if !hook(l.logger.name, level) {
+			ok = false
+		}
+	}
+	if !ok {
+		return
+	}
+
+	if len(args) > 0 {
+		format = fmt.Sprintf(format, args...)
+	}
+
+	emitLog(l.logger, level, l.depth, format, l.fields)
+}
+
+// LLog is another interface of the key-value log with the level.
+type LLog struct {
+	fields []Field
+	logger Logger
+	depth  int
+}
+
+func newLLog(logger Logger, depth int, fields ...Field) LLog {
+	_fields := append(fieldPool.Get().([]Field), logger.fields...)
+	_fields = append(_fields, fields...)
+	return LLog{logger: logger, depth: depth, fields: _fields}
+}
+
+// K appends the key-value pair into the structured log.
+func (l LLog) K(key string, value interface{}) LLog {
+	return l.F(Field{Key: key, Value: value})
+}
+
+// F appends more than one key-value pair into the structured log by the field.
+func (l LLog) F(fields ...Field) LLog {
+	l.fields = append(l.fields, fields...)
+	return l
+}
+
+// L is short for Level().
+func (l LLog) L(lvl Level, msg string, args ...interface{}) { l.emit(lvl, msg, args...) }
+
+// Level emits a customized level log.
+func (l LLog) Level(lvl Level, msg string, args ...interface{}) { l.emit(lvl, msg, args...) }
+
+// Trace emits a TRACE log.
+func (l LLog) Trace(msg string, args ...interface{}) { l.emit(LvlTrace, msg, args...) }
+
+// Debug emits a DEBUG log.
+func (l LLog) Debug(msg string, args ...interface{}) { l.emit(LvlDebug, msg, args...) }
+
+// Info emits a INFO log.
+func (l LLog) Info(msg string, args ...interface{}) { l.emit(LvlInfo, msg, args...) }
+
+// Warn emits a WARN log.
+func (l LLog) Warn(msg string, args ...interface{}) { l.emit(LvlWarn, msg, args...) }
+
+// Error emits a ERROR log.
+func (l LLog) Error(msg string, args ...interface{}) { l.emit(LvlError, msg, args...) }
+
+// Panic emits a PANIC log.
+func (l LLog) Panic(msg string, args ...interface{}) { l.emit(LvlPanic, msg, args...) }
+
+// Fatal emits a FATAL log.
+func (l LLog) Fatal(msg string, args ...interface{}) { l.emit(LvlFatal, msg, args...) }

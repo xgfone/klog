@@ -33,15 +33,24 @@ func main() {
 
 	field1 := klog.Field{Key: "key2", Value: "value2"}
 	field2 := klog.Field{Key: "key3", Value: "value3"}
+
+	// Style 1:
 	log.Info().K("key4", "value4").Print("don't output")
 	log.Error(field1, field2).K("key4", "value4").Printf("will output %s", "placeholder")
 
+	// Style 2:
+	log.K("key4", "value4").Info("don't output")
+	log.F(field1, field2).K("key4", "value4").Error("will output %s", "placeholder")
+
 	// Output:
-	// t=2019-05-23T10:36:06.8399426+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
+	// t=2019-05-23T23:22:55.595204+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
+	// t=2019-05-23T23:22:55.595421+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
 }
 ```
 
-Furthermore, `klog` has built in a global logger, `Std`, which is equal to `klog.New()`, and you can use it and its exported function, `Trace()`, `Debug`, `Info`, `Warn`, `Error`, `Panic`, `Fatal`, or `L(level)`. **Suggestion:** You should use these functions instead.
+Notice: `klog` supplies two kinds of log styles, `Log`(__**Style 1**__) and `LLog` (__**Style 2**__).
+
+Furthermore, `klog` has built in a global logger, `Std`, which is equal to `klog.New()`, and you can use it and its exported function, `F()`, `K()`, `Trace()`, `Debug`, `Info`, `Warn`, `Error`, `Panic`, `Fatal`, or `L(level)`. **Suggestion:** You should use these functions instead.
 
 ```go
 package main
@@ -51,11 +60,17 @@ import "github.com/xgfone/klog"
 func main() {
 	klog.Std = klog.Std.WithLevel(klog.LvlWarn)
 
+	// Style 1:
 	klog.Info().K("key", "value").Msg("don't output")
 	klog.Error().K("key", "value").Msgf("will output %s", "placeholder")
 
+	// Style 2:
+	klog.K("key", "value").Info("don't output")
+	klog.K("key", "value").Error("will output %s", "placeholder")
+
 	// Output:
-	// t=2019-05-22T16:05:56.2318273+08:00 lvl=ERROR key=value msg=will output placeholder
+	// t=2019-05-23T23:22:02.302121+08:00 lvl=ERROR key=value msg=will output placeholder
+	// t=2019-05-23T23:22:02.302212+08:00 lvl=ERROR key=value msg=will output placeholder
 }
 ```
 
@@ -206,11 +221,17 @@ func main() {
 
 The log framework itself has no any performance costs and the key of the bottleneck is the encoder.
 
-|  test   | ops | ns/op | bytes/op | allocs/op
-|---------|-----|-------|----------|-----------
-|BenchmarkKlogNothingEncoder-4     | 10000000  |  149 ns/op | **32 B/op** |  **1 allocs/op**
-|BenchmarkKlogTextEncoder-4        |  5000000  |  281 ns/op | **32 B/op** |  **1 allocs/op**
-|BenchmarkKlogJSONEncoder-4        |  5000000  |  313 ns/op | **32 B/op** |  **1 allocs/op**
-|BenchmarkKlogStdJSONEncoder-4     |  1000000  | 1043 ns/op | 1455 B/op   | 22 allocs/op
+|              test               |    ops    |     ns/op    |   bytes/op   |    allocs/op
+|---------------------------------|-----------|--------------|--------------|-----------------
+|BenchmarkKlog**L**NothingEncoder-4   |  5000000  |   274 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**L**TextEncoder-4      |  3000000  |   556 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**L**JSONEncoder-4      |  3000000  |   530 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**L**StdJSONEncoder-4   |  1000000  |  2190 ns/op  |  1441 B/op   |  22 allocs/op
+|BenchmarkKlog**F**NothingEncoder-4   | 10000000  |   189 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**F**TextEncoder-4      |  3000000  |   457 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**F**JSONEncoder-4      |  3000000  |   513 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**F**StdJSONEncoder-4   |  1000000  |  2177 ns/op  |  1441 B/op   |  22 allocs/op
 
-**Notice:** The once memory allocation, `32 B/op` and `1 allocs/op`, is due to the slice type `[]Field`.
+**Notice:**
+1. **L** and **F** respectively represents **Log** and **LLog** interface.
+2. The once memory allocation, `32 B/op` and `1 allocs/op`, is due to the slice type `[]Field`.

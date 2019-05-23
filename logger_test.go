@@ -30,6 +30,15 @@ func TestLogger(t *testing.T) {
 	if s != " lvl=INFO caller1=logger_test.go:26 caller2=logger_test.go:26 msg=test logger\n" {
 		t.Error(s)
 	}
+
+	buf.Reset()
+	logger.K("caller2", Caller()).Info("test %s", "logger")
+
+	s = buf.String()
+	s = s[strings.IndexByte(s, ' '):]
+	if s != " lvl=INFO caller1=logger_test.go:35 caller2=logger_test.go:35 msg=test logger\n" {
+		t.Error(s)
+	}
 }
 
 func TestJSONEncoder(t *testing.T) {
@@ -54,6 +63,26 @@ func TestJSONEncoder(t *testing.T) {
 	} else if v, ok := ms["msg"].(string); !ok || v != "testlogger" {
 		t.Error(ms)
 	}
+
+	buf.Reset()
+	ms = make(map[string]interface{}, 10)
+	logger.K("key2", 123).Info("test %s", "logger")
+
+	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
+		t.Errorf("%s: %v", buf.String(), err)
+	} else if len(ms) != 5 {
+		t.Error(ms)
+	} else if ms["t"] == nil {
+		t.Error(ms)
+	} else if v, ok := ms["lvl"].(string); !ok || v != "INFO" {
+		t.Error(ms)
+	} else if v, ok := ms["key1"].(string); !ok || v != `value1"` {
+		t.Error(ms)
+	} else if v, ok := ms["key2"].(float64); !ok || v != 123 {
+		t.Error(ms)
+	} else if v, ok := ms["msg"].(string); !ok || v != "test logger" {
+		t.Error(ms)
+	}
 }
 
 func TestStdJSONEncoder(t *testing.T) {
@@ -76,6 +105,26 @@ func TestStdJSONEncoder(t *testing.T) {
 	} else if v, ok := ms["key2"].(float64); !ok || v != 123 {
 		t.Error(ms)
 	} else if v, ok := ms["msg"].(string); !ok || v != "testlogger" {
+		t.Error(ms)
+	}
+
+	buf.Reset()
+	ms = make(map[string]interface{}, 10)
+	logger.K("key2", 123).Info("test %s", "logger")
+
+	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
+		t.Errorf("%s: %v", buf.String(), err)
+	} else if len(ms) != 5 {
+		t.Error(ms)
+	} else if ms["t"] == nil {
+		t.Error(ms)
+	} else if v, ok := ms["lvl"].(string); !ok || v != "INFO" {
+		t.Error(ms)
+	} else if v, ok := ms["key1"].(string); !ok || v != `value1"` {
+		t.Error(ms)
+	} else if v, ok := ms["key2"].(float64); !ok || v != 123 {
+		t.Error(ms)
+	} else if v, ok := ms["msg"].(string); !ok || v != "test logger" {
 		t.Error(ms)
 	}
 }
