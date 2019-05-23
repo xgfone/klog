@@ -147,51 +147,54 @@ func (l Logger) GetWriter() Writer {
 	return l.writer
 }
 
-func (l Logger) emit(level Level) Log {
-	return newLog(l, level, l.depth)
+func (l Logger) emit(level Level, fields ...Field) Log {
+	return newLog(l, level, l.depth).F(fields...)
 }
 
 // Level emits a log, the level of which is level.
-func (l Logger) Level(lvl Level) Log {
-	return l.emit(lvl)
+//
+// You can gives some key-value field contexts optionally, which is equal to
+// call Log.F(fields...).
+func (l Logger) Level(level Level, fields ...Field) Log {
+	return l.emit(level, fields...)
 }
 
-// L is short for Level(lvl).
-func (l Logger) L(lvl Level) Log {
-	return l.emit(lvl)
+// L is short for Level(level, fields...).
+func (l Logger) L(level Level, fields ...Field) Log {
+	return l.emit(level, fields...)
 }
 
-// Trace is equal to l.Level(LvlTrace).
-func (l Logger) Trace() Log {
-	return l.emit(LvlTrace)
+// Trace is equal to l.Level(LvlTrace, fields...).
+func (l Logger) Trace(fields ...Field) Log {
+	return l.emit(LvlTrace, fields...)
 }
 
-// Debug is equal to l.Level(LvlDebug).
-func (l Logger) Debug() Log {
-	return l.emit(LvlDebug)
+// Debug is equal to l.Level(LvlDebug, fields...).
+func (l Logger) Debug(fields ...Field) Log {
+	return l.emit(LvlDebug, fields...)
 }
 
-// Info is equal to l.Level(LvlInfo).
-func (l Logger) Info() Log {
-	return l.emit(LvlInfo)
+// Info is equal to l.Level(LvlInfo, fields...).
+func (l Logger) Info(fields ...Field) Log {
+	return l.emit(LvlInfo, fields...)
 }
 
-// Warn is equal to l.Level(LvlWarn).
-func (l Logger) Warn() Log {
-	return l.emit(LvlWarn)
+// Warn is equal to l.Level(LvlWarn, fields...).
+func (l Logger) Warn(fields ...Field) Log {
+	return l.emit(LvlWarn, fields...)
 }
 
-// Error is equal to l.Level(LvlError).
-func (l Logger) Error() Log {
-	return l.emit(LvlError)
+// Error is equal to l.Level(LvlError, fields...).
+func (l Logger) Error(fields ...Field) Log {
+	return l.emit(LvlError, fields...)
 }
 
-// Panic is equal to l.Level(LvlPanic).
-func (l Logger) Panic() Log {
-	return l.emit(LvlPanic)
+// Panic is equal to l.Level(LvlPanic, fields...).
+func (l Logger) Panic(fields ...Field) Log {
+	return l.emit(LvlPanic, fields...)
 }
 
-// Fatal is equal to l.Level(LvlFatal).
-func (l Logger) Fatal() Log {
-	return l.emit(LvlFatal)
+// Fatal is equal to l.Level(LvlFatal, fields...).
+func (l Logger) Fatal(fields ...Field) Log {
+	return l.emit(LvlFatal, fields...)
 }

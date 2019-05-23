@@ -18,25 +18,25 @@ package klog
 var Std = New()
 
 // L emits a customized level log.
-func L(level Level) Log { return Std.L(level) }
+func L(level Level, fields ...Field) Log { return Std.L(level, fields...) }
 
 // Trace emits a TRACE log.
-func Trace() Log { return Std.Trace() }
+func Trace(fields ...Field) Log { return Std.Trace(fields...) }
 
 // Debug emits a DEBUG log.
-func Debug() Log { return Std.Debug() }
+func Debug(fields ...Field) Log { return Std.Debug(fields...) }
 
 // Info emits a INFO log.
-func Info() Log { return Std.Info() }
+func Info(fields ...Field) Log { return Std.Info(fields...) }
 
 // Warn emits a WARN log.
-func Warn() Log { return Std.Warn() }
+func Warn(fields ...Field) Log { return Std.Warn(fields...) }
 
 // Error emits a ERROR log.
-func Error() Log { return Std.Error() }
+func Error(fields ...Field) Log { return Std.Error(fields...) }
 
 // Panic emits a PANIC log.
-func Panic() Log { return Std.Panic() }
+func Panic(fields ...Field) Log { return Std.Panic(fields...) }
 
 // Fatal emits a FATAL log.
-func Fatal() Log { return Std.Fatal() }
+func Fatal(fields ...Field) Log { return Std.Fatal(fields...) }
