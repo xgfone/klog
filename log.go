@@ -78,44 +78,56 @@ func (l Log) F(fields ...Field) Log {
 	return l
 }
 
+// Print is equal to l.Msg(args...).
+func (l Log) Print(args ...interface{}) {
+	l.depth++
+	l.Msg(args...)
+}
+
+// Printf is equal to l.Msgf(format, args...).
+func (l Log) Printf(format string, args ...interface{}) {
+	l.depth++
+	l.Msgf(format, args...)
+}
+
 // Msg appends the msg into the structured log with the key "msg" at last.
 //
 // Notice: "args" will be formatted by `fmt.Sprint(args...)`.
-func (l Log) Msg(args ...interface{}) error {
+func (l Log) Msg(args ...interface{}) {
 	if !l.ok {
-		return nil
+		return
 	}
 
 	switch len(args) {
 	case 0:
-		return l.emit("")
+		l.emit("")
 	case 1:
 		switch v := args[0].(type) {
 		case string:
-			return l.emit(v)
+			l.emit(v)
 		default:
-			return l.emit(fmt.Sprint(v))
+			l.emit(fmt.Sprint(v))
 		}
 	default:
-		return l.emit(fmt.Sprint(args...))
+		l.emit(fmt.Sprint(args...))
 	}
 }
 
 // Msgf appends the msg into the structured log with the key "msg" at last.
 //
 // Notice: "format" and "args" will be foramtted by `fmt.Sprintf(format, args...)`.
-func (l Log) Msgf(format string, args ...interface{}) error {
+func (l Log) Msgf(format string, args ...interface{}) {
 	if !l.ok {
-		return nil
+		return
 	}
 
 	if len(args) == 0 {
-		return l.emit(format)
+		l.emit(format)
 	}
-	return l.emit(fmt.Sprintf(format, args...))
+	l.emit(fmt.Sprintf(format, args...))
 }
 
-func (l Log) emit(msg string) (err error) {
+func (l Log) emit(msg string) {
 	record := Record{
 		Msg:    msg,
 		Time:   time.Now(),
@@ -137,9 +149,8 @@ func (l Log) emit(msg string) (err error) {
 	buf := getBuilder()
 	l.logger.encoder(buf, record)
 	if bs := buf.Bytes(); len(bs) > 0 {
-		_, err = l.logger.writer.Write(l.level, bs)
+		l.logger.writer.Write(l.level, bs)
 	}
 	fieldPool.Put(l.fields[:0])
 	putBuilder(buf)
-	return
 }

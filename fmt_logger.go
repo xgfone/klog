@@ -101,29 +101,36 @@ func (l fmtLoggerError) Writer() io.Writer {
 }
 
 func (l fmtLoggerError) Trace(format string, args ...interface{}) error {
-	return l.logger.Trace().Msgf(format, args...)
+	l.logger.Trace().Msgf(format, args...)
+	return nil
 }
 
 func (l fmtLoggerError) Debug(format string, args ...interface{}) error {
-	return l.logger.Debug().Msgf(format, args...)
+	l.logger.Debug().Msgf(format, args...)
+	return nil
 }
 
 func (l fmtLoggerError) Info(format string, args ...interface{}) error {
-	return l.logger.Info().Msgf(format, args...)
+	l.logger.Info().Msgf(format, args...)
+	return nil
 }
 
 func (l fmtLoggerError) Warn(format string, args ...interface{}) error {
-	return l.logger.Warn().Msgf(format, args...)
+	l.logger.Warn().Msgf(format, args...)
+	return nil
 }
 
 func (l fmtLoggerError) Error(format string, args ...interface{}) error {
-	return l.logger.Error().Msgf(format, args...)
+	l.logger.Error().Msgf(format, args...)
+	return nil
 }
 
 func (l fmtLoggerError) Panic(format string, args ...interface{}) error {
-	return l.logger.Panic().Msgf(format, args...)
+	l.logger.Panic().Msgf(format, args...)
+	return nil
 }
 
 func (l fmtLoggerError) Fatal(format string, args ...interface{}) error {
-	return l.logger.Fatal().Msgf(format, args...)
+	l.logger.Fatal().Msgf(format, args...)
+	return nil
 }
