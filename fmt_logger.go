@@ -42,6 +42,19 @@ type FmtLogger interface {
 	Fatal(format string, args ...interface{})
 }
 
+// FmtLoggerf represents a logger based on the % foramtter.
+type FmtLoggerf interface {
+	Writer() io.Writer
+
+	Tracef(format string, args ...interface{})
+	Debugf(format string, args ...interface{})
+	Infof(format string, args ...interface{})
+	Warnf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
+	Panicf(format string, args ...interface{})
+	Fatalf(format string, args ...interface{})
+}
+
 // ToFmtLoggerError converts Logger to FmtLoggerError.
 func ToFmtLoggerError(logger Logger) FmtLoggerError {
 	return fmtLoggerError{logger: logger.WithDepth(1)}
@@ -50,6 +63,19 @@ func ToFmtLoggerError(logger Logger) FmtLoggerError {
 // ToFmtLogger converts Logger to FmtLogger.
 func ToFmtLogger(logger Logger) FmtLogger {
 	return fmtLogger{logger: logger.WithDepth(1)}
+}
+
+// ToFmtLoggerf converts Logger to FmtLoggerf.
+func ToFmtLoggerf(logger Logger) FmtLoggerf {
+	return fmtLoggerf{logger}
+}
+
+type fmtLoggerf struct {
+	Logger
+}
+
+func (l fmtLoggerf) Writer() io.Writer {
+	return FromWriter(l.GetWriter())
 }
 
 ////////////////////////////////////////////////////////////////////////////
