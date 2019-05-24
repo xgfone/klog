@@ -73,7 +73,7 @@ func BenchmarkKlogFNothingEncoder(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.K("key", "vlaue").Info("message")
+			logger.K("key", "vlaue").Infof("message")
 		}
 	})
 }
@@ -85,7 +85,7 @@ func BenchmarkKlogFTextEncoder(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.K("key", "vlaue").Info("message")
+			logger.K("key", "vlaue").Infof("message")
 		}
 	})
 }
@@ -97,7 +97,7 @@ func BenchmarkKlogFJSONEncoder(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.K("key", "vlaue").Info("message")
+			logger.K("key", "vlaue").Infof("message")
 		}
 	})
 }
@@ -109,7 +109,7 @@ func BenchmarkKlogFStdJSONEncoder(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.K("key", "vlaue").Info("message")
+			logger.K("key", "vlaue").Infof("message")
 		}
 	})
 }

@@ -220,29 +220,29 @@ func (l LLog) F(fields ...Field) LLog {
 	return l
 }
 
-// L is short for Level().
-func (l LLog) L(lvl Level, msg string, args ...interface{}) { l.emit(lvl, msg, args...) }
+// Lf is short for Level().
+func (l LLog) Lf(lvl Level, msg string, args ...interface{}) { l.emit(lvl, msg, args...) }
 
-// Level emits a customized level log.
-func (l LLog) Level(lvl Level, msg string, args ...interface{}) { l.emit(lvl, msg, args...) }
+// Levelf emits a customized level log.
+func (l LLog) Levelf(lvl Level, msg string, args ...interface{}) { l.emit(lvl, msg, args...) }
 
-// Trace emits a TRACE log.
-func (l LLog) Trace(msg string, args ...interface{}) { l.emit(LvlTrace, msg, args...) }
+// Tracef emits a TRACE log.
+func (l LLog) Tracef(msg string, args ...interface{}) { l.emit(LvlTrace, msg, args...) }
 
-// Debug emits a DEBUG log.
-func (l LLog) Debug(msg string, args ...interface{}) { l.emit(LvlDebug, msg, args...) }
+// Debugf emits a DEBUG log.
+func (l LLog) Debugf(msg string, args ...interface{}) { l.emit(LvlDebug, msg, args...) }
 
-// Info emits a INFO log.
-func (l LLog) Info(msg string, args ...interface{}) { l.emit(LvlInfo, msg, args...) }
+// Infof emits a INFO log.
+func (l LLog) Infof(msg string, args ...interface{}) { l.emit(LvlInfo, msg, args...) }
 
-// Warn emits a WARN log.
-func (l LLog) Warn(msg string, args ...interface{}) { l.emit(LvlWarn, msg, args...) }
+// Warnf emits a WARN log.
+func (l LLog) Warnf(msg string, args ...interface{}) { l.emit(LvlWarn, msg, args...) }
 
-// Error emits a ERROR log.
-func (l LLog) Error(msg string, args ...interface{}) { l.emit(LvlError, msg, args...) }
+// Errorf emits a ERROR log.
+func (l LLog) Errorf(msg string, args ...interface{}) { l.emit(LvlError, msg, args...) }
 
-// Panic emits a PANIC log.
-func (l LLog) Panic(msg string, args ...interface{}) { l.emit(LvlPanic, msg, args...) }
+// Panicf emits a PANIC log.
+func (l LLog) Panicf(msg string, args ...interface{}) { l.emit(LvlPanic, msg, args...) }
 
-// Fatal emits a FATAL log.
-func (l LLog) Fatal(msg string, args ...interface{}) { l.emit(LvlFatal, msg, args...) }
+// Fatalf emits a FATAL log.
+func (l LLog) Fatalf(msg string, args ...interface{}) { l.emit(LvlFatal, msg, args...) }

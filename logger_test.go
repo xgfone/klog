@@ -32,11 +32,20 @@ func TestLogger(t *testing.T) {
 	}
 
 	buf.Reset()
-	logger.K("caller2", Caller()).Info("test %s", "logger")
+	logger.K("caller2", Caller()).Infof("test %s", "logger")
 
 	s = buf.String()
 	s = s[strings.IndexByte(s, ' '):]
 	if s != " lvl=INFO caller1=logger_test.go:35 caller2=logger_test.go:35 msg=test logger\n" {
+		t.Error(s)
+	}
+
+	buf.Reset()
+	logger.Infof("test %d", 123)
+
+	s = buf.String()
+	s = s[strings.IndexByte(s, ' '):]
+	if s != " lvl=INFO caller1=logger_test.go:44 msg=test 123\n" {
 		t.Error(s)
 	}
 }
@@ -66,7 +75,7 @@ func TestJSONEncoder(t *testing.T) {
 
 	buf.Reset()
 	ms = make(map[string]interface{}, 10)
-	logger.K("key2", 123).Info("test %s", "logger")
+	logger.K("key2", 123).Infof("test %s", "logger")
 
 	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
 		t.Errorf("%s: %v", buf.String(), err)
@@ -110,7 +119,7 @@ func TestStdJSONEncoder(t *testing.T) {
 
 	buf.Reset()
 	ms = make(map[string]interface{}, 10)
-	logger.K("key2", 123).Info("test %s", "logger")
+	logger.K("key2", 123).Infof("test %s", "logger")
 
 	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
 		t.Errorf("%s: %v", buf.String(), err)

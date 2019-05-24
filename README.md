@@ -39,18 +39,24 @@ func main() {
 	log.Error(field1, field2).K("key4", "value4").Printf("will output %s", "placeholder")
 
 	// Style 2:
-	log.K("key4", "value4").Info("don't output")
-	log.F(field1, field2).K("key4", "value4").Error("will output %s", "placeholder")
+	log.K("key4", "value4").Infof("don't output")
+	log.F(field1, field2).K("key4", "value4").Errorf("will output %s", "placeholder")
+	log.Warnf("output '%s' log", "WARN") // You can emit log directly without key-value pairs.
 
 	// Output:
-	// t=2019-05-23T23:22:55.595204+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
-	// t=2019-05-23T23:22:55.595421+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
+	// t=2019-05-24T09:31:27.2592259+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
+	// t=2019-05-24T09:31:27.2712334+08:00 lvl=ERROR key1=value1 key2=value2 key3=value3 key4=value4 msg=will output placeholder
+	// t=2019-05-24T09:31:27.2712334+08:00 lvl=WARN key1=value1 msg=output 'WARN' log
 }
 ```
 
 Notice: `klog` supplies two kinds of log styles, `Log`(__**Style 1**__) and `LLog` (__**Style 2**__).
 
-Furthermore, `klog` has built in a global logger, `Std`, which is equal to `klog.New()`, and you can use it and its exported function, `F()`, `K()`, `Trace()`, `Debug`, `Info`, `Warn`, `Error`, `Panic`, `Fatal`, or `L(level)`. **Suggestion:** You should use these functions instead.
+Furthermore, `klog` has built in a global logger, `Std`, which is equal to `klog.New()`, and you can use it and its exported function. **Suggestion:** You should use these functions instead.
+
+**Style 1:** `F()`, `K()`, `Tracef()`, `Debugf()`, `Infof()`, `Warnf()`, `Errorf()`, `Panicf()`, `Fatalf()`, or `Lf(level)`.
+
+**Style 2:** `Trace()`, `Debug()`, `Info()`, `Warn()`, `Error()`, `Panic()`, `Fatal()`, or `L(level)`.
 
 ```go
 package main
@@ -65,12 +71,14 @@ func main() {
 	klog.Error().K("key", "value").Msgf("will output %s", "placeholder")
 
 	// Style 2:
-	klog.K("key", "value").Info("don't output")
-	klog.K("key", "value").Error("will output %s", "placeholder")
+	klog.K("key", "value").Infof("don't output")
+	klog.K("key", "value").Errorf("will output %s", "placeholder")
+	klog.Warnf("output '%s' log", "WARN") // You can emit log directly without key-value pairs.
 
 	// Output:
-	// t=2019-05-23T23:22:02.302121+08:00 lvl=ERROR key=value msg=will output placeholder
-	// t=2019-05-23T23:22:02.302212+08:00 lvl=ERROR key=value msg=will output placeholder
+	// t=2019-05-24T09:46:50.9758631+08:00 lvl=ERROR key=value msg=will output placeholder
+	// t=2019-05-24T09:46:50.9868622+08:00 lvl=ERROR key=value msg=will output placeholder
+	// t=2019-05-24T09:46:50.9868622+08:00 lvl=WARN msg=output 'WARN' log
 }
 ```
 
@@ -221,8 +229,17 @@ func main() {
 
 The log framework itself has no any performance costs and the key of the bottleneck is the encoder.
 
-|              test               |    ops    |     ns/op    |   bytes/op   |    allocs/op
-|---------------------------------|-----------|--------------|--------------|-----------------
+### Test 1
+
+```
+MacBook Pro(Retina, 13-inch, Mid 2014)
+Intel Core i5 2.6GHz
+8GB DDR3 1600MHz
+macOS Mojave
+```
+
+|                test                 |    ops    |     ns/op    |   bytes/op   |    allocs/op
+|-------------------------------------|-----------|--------------|--------------|-----------------
 |BenchmarkKlog**L**NothingEncoder-4   |  5000000  |   274 ns/op  |  **32 B/op** |  **1 allocs/op**
 |BenchmarkKlog**L**TextEncoder-4      |  3000000  |   556 ns/op  |  **32 B/op** |  **1 allocs/op**
 |BenchmarkKlog**L**JSONEncoder-4      |  3000000  |   530 ns/op  |  **32 B/op** |  **1 allocs/op**
@@ -231,6 +248,28 @@ The log framework itself has no any performance costs and the key of the bottlen
 |BenchmarkKlog**F**TextEncoder-4      |  3000000  |   457 ns/op  |  **32 B/op** |  **1 allocs/op**
 |BenchmarkKlog**F**JSONEncoder-4      |  3000000  |   513 ns/op  |  **32 B/op** |  **1 allocs/op**
 |BenchmarkKlog**F**StdJSONEncoder-4   |  1000000  |  2177 ns/op  |  1441 B/op   |  22 allocs/op
+
+
+### Test 2
+
+```
+Dell Vostro 3470
+Intel Core i5-7400 3.0GHz
+8GB DDR4 2666MHz
+Windows 10
+```
+
+|                test                 |    ops    |     ns/op    |   bytes/op   |    allocs/op
+|-------------------------------------|-----------|--------------|--------------|-----------------
+|BenchmarkKlog**L**NothingEncoder-4   | 10000000  |   235 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**L**TextEncoder-4      |  5000000  |   331 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**L**JSONEncoder-4      |  3000000  |   448 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**L**StdJSONEncoder-4   |  1000000  |  1239 ns/op  |  1454 B/op   |   22 allocs/op
+|BenchmarkKlog**F**NothingEncoder-4   | 10000000  |   162 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**F**TextEncoder-4      |  5000000  |   315 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**F**JSONEncoder-4      |  3000000  |   436 ns/op  |  **32 B/op** |  **1 allocs/op**
+|BenchmarkKlog**F**StdJSONEncoder-4   |  1000000  |  1091 ns/op  |  1454 B/op   |   22 allocs/op
+
 
 **Notice:**
 1. **L** and **F** respectively represents **Log** and **LLog** interface.

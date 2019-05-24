@@ -85,6 +85,13 @@ func (l Logger) clone() Logger {
 	}
 }
 
+// AddDepth is the same as WithDepth(depth), but it will grow it with depth,
+// not reset it to depth.
+func (l Logger) AddDepth(depth int) Logger {
+	l.depth += depth
+	return l
+}
+
 // WithName returns a new Logger with the name.
 func (l Logger) WithName(name string) Logger {
 	logger := l.clone()
@@ -176,65 +183,102 @@ func (l Logger) GetWriter() Writer {
 	return l.writer
 }
 
-// F appends a key-value field log and returns another log interface
-// to emit the level log.
-func (l Logger) F(fields ...Field) LLog {
-	return newLLog(l, l.depth, fields...)
-}
-
-// K is equal to F(Field{Key: key, Value: value}).
-func (l Logger) K(key string, value interface{}) LLog {
-	return l.F(Field{Key: key, Value: value})
-}
-
 func (l Logger) emit(level Level, fields ...Field) Log {
 	return newLog(l, level, l.depth).F(fields...)
 }
 
-// Level emits a log, the level of which is level.
+// Level emits a specified `level` log.
 //
 // You can gives some key-value field contexts optionally, which is equal to
-// call Log.F(fields...).
-func (l Logger) Level(level Level, fields ...Field) Log {
-	return l.emit(level, fields...)
-}
+// call `Log.F(fields...)`.
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Level(level Level, fields ...Field) Log { return l.emit(level, fields...) }
 
 // L is short for Level(level, fields...).
-func (l Logger) L(level Level, fields ...Field) Log {
-	return l.emit(level, fields...)
-}
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) L(level Level, fields ...Field) Log { return l.emit(level, fields...) }
 
 // Trace is equal to l.Level(LvlTrace, fields...).
-func (l Logger) Trace(fields ...Field) Log {
-	return l.emit(LvlTrace, fields...)
-}
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Trace(fields ...Field) Log { return l.emit(LvlTrace, fields...) }
 
 // Debug is equal to l.Level(LvlDebug, fields...).
-func (l Logger) Debug(fields ...Field) Log {
-	return l.emit(LvlDebug, fields...)
-}
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Debug(fields ...Field) Log { return l.emit(LvlDebug, fields...) }
 
 // Info is equal to l.Level(LvlInfo, fields...).
-func (l Logger) Info(fields ...Field) Log {
-	return l.emit(LvlInfo, fields...)
-}
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Info(fields ...Field) Log { return l.emit(LvlInfo, fields...) }
 
 // Warn is equal to l.Level(LvlWarn, fields...).
-func (l Logger) Warn(fields ...Field) Log {
-	return l.emit(LvlWarn, fields...)
-}
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Warn(fields ...Field) Log { return l.emit(LvlWarn, fields...) }
 
 // Error is equal to l.Level(LvlError, fields...).
-func (l Logger) Error(fields ...Field) Log {
-	return l.emit(LvlError, fields...)
-}
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Error(fields ...Field) Log { return l.emit(LvlError, fields...) }
 
 // Panic is equal to l.Level(LvlPanic, fields...).
-func (l Logger) Panic(fields ...Field) Log {
-	return l.emit(LvlPanic, fields...)
-}
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Panic(fields ...Field) Log { return l.emit(LvlPanic, fields...) }
 
 // Fatal is equal to l.Level(LvlFatal, fields...).
-func (l Logger) Fatal(fields ...Field) Log {
-	return l.emit(LvlFatal, fields...)
+//
+// Notice: you must continue to call Msg() or Msgf() to trigger it.
+func (l Logger) Fatal(fields ...Field) Log { return l.emit(LvlFatal, fields...) }
+
+// F appends a key-value field log and returns another log interface
+// to emit the level log.
+//
+// Notice: you must continue to call the level method, such as Levelf(),
+// Debugf(), Infof(), Errorf(), etc, to trigger it.
+func (l Logger) F(fields ...Field) LLog {
+	return newLLog(l, l.depth, fields...)
 }
+
+// K is equal to l.F(Field{Key: key, Value: value}).
+//
+// Notice: you must continue to call the level method, such as Levelf(),
+// Debugf(), Infof(), Errorf(), etc, to trigger it.
+func (l Logger) K(key string, value interface{}) LLog {
+	return l.F(Field{Key: key, Value: value})
+}
+
+// Levelf emits a specified `level` log, which is equal to l.F().Levelf(level, msg, args...).
+func (l Logger) Levelf(level Level, msg string, args ...interface{}) {
+	newLLog(l, l.depth+1).Levelf(level, msg, args...)
+}
+
+// Lf is short for l.Levelf(level, msg, args...).
+func (l Logger) Lf(level Level, msg string, args ...interface{}) {
+	newLLog(l, l.depth+1).Levelf(level, msg, args...)
+}
+
+// Tracef emits a TRACE log, which is equal to l.Levelf(LvlTrace, msg, args...).
+func (l Logger) Tracef(msg string, args ...interface{}) { newLLog(l, l.depth+1).Tracef(msg, args...) }
+
+// Debugf emits a DEBUG log, which is equal to l.Levelf(LvlDebug, msg, args...).
+func (l Logger) Debugf(msg string, args ...interface{}) { newLLog(l, l.depth+1).Debugf(msg, args...) }
+
+// Infof emits a INFO log, which is equal to l.Levelf(LvlInfo, msg, args...).
+func (l Logger) Infof(msg string, args ...interface{}) { newLLog(l, l.depth+1).Infof(msg, args...) }
+
+// Warnf emits a WARN log, which is equal to l.Levelf(LvlWarn, msg, args...).
+func (l Logger) Warnf(msg string, args ...interface{}) { newLLog(l, l.depth+1).Warnf(msg, args...) }
+
+// Errorf emits a ERROR log, which is equal to l.Levelf(LvlError, msg, args...).
+func (l Logger) Errorf(msg string, args ...interface{}) { newLLog(l, l.depth+1).Errorf(msg, args...) }
+
+// Panicf emits a PANIC log, which is equal to l.Levelf(LvlPanic, msg, args...).
+func (l Logger) Panicf(msg string, args ...interface{}) { newLLog(l, l.depth+1).Panicf(msg, args...) }
+
+// Fatalf emits a FATAL log, which is equal to l.Levelf(LvlFatal, msg, args...).
+func (l Logger) Fatalf(msg string, args ...interface{}) { newLLog(l, l.depth+1).Fatalf(msg, args...) }
