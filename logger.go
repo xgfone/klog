@@ -73,18 +73,6 @@ func NewSimpleLogger(level, filePath, fileSize string, fileNum int) (Logger, err
 	return New(StreamWriter(file)).WithLevel(lvl), nil
 }
 
-func (l Logger) clone() Logger {
-	return Logger{
-		name:    l.name,
-		hooks:   l.hooks,
-		depth:   l.depth,
-		level:   l.level,
-		writer:  l.writer,
-		fields:  l.fields,
-		encoder: l.encoder,
-	}
-}
-
 // AddDepth is the same as WithDepth(depth), but it will grow it with depth,
 // not reset it to depth.
 func (l Logger) AddDepth(depth int) Logger {
@@ -94,9 +82,8 @@ func (l Logger) AddDepth(depth int) Logger {
 
 // WithName returns a new Logger with the name.
 func (l Logger) WithName(name string) Logger {
-	logger := l.clone()
-	logger.name = name
-	return logger
+	l.name = name
+	return l
 }
 
 // WithDepth returns a new Logger with the caller depth.
@@ -106,9 +93,8 @@ func (l Logger) WithDepth(depth int) Logger {
 	if depth < 0 {
 		panic("the log depth must not be less than 0")
 	}
-	logger := l.clone()
-	logger.depth = depth
-	return logger
+	l.depth = depth
+	return l
 }
 
 // WithLevel returns a new Logger with the level.
@@ -116,9 +102,8 @@ func (l Logger) WithLevel(level Level) Logger {
 	if level < 0 {
 		panic("the log level must not be less than 0")
 	}
-	logger := l.clone()
-	logger.level = level
-	return logger
+	l.level = level
+	return l
 }
 
 // WithWriter returns a new Logger with the writer w.
@@ -126,9 +111,8 @@ func (l Logger) WithWriter(w Writer) Logger {
 	if w == nil {
 		panic("the log writer must not be nil")
 	}
-	logger := l.clone()
-	logger.writer = w
-	return logger
+	l.writer = w
+	return l
 }
 
 // WithEncoder returns a new Logger with the encoder.
@@ -136,23 +120,20 @@ func (l Logger) WithEncoder(encoder Encoder) Logger {
 	if encoder == nil {
 		panic("the log encoder must not be nil")
 	}
-	logger := l.clone()
-	logger.encoder = encoder
-	return logger
+	l.encoder = encoder
+	return l
 }
 
 // WithHook returns a new Logger with the hook, which will append the hook.
 func (l Logger) WithHook(hook ...Hook) Logger {
-	logger := l.clone()
-	logger.hooks = append(logger.hooks, hook...)
-	return logger
+	l.hooks = append(l.hooks, hook...)
+	return l
 }
 
 // WithField returns a new Logger with the new field context.
 func (l Logger) WithField(fields ...Field) Logger {
-	logger := l.clone()
-	logger.fields = append(logger.fields, fields...)
-	return logger
+	l.fields = append(l.fields, fields...)
+	return l
 }
 
 // WithKv returns a new Logger with the new key-value context, which is equal to
