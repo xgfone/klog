@@ -16,6 +16,7 @@ Now `klog` requires Go `1.x`.
 
 - The better performance.
 - Lazy evaluation of expensive operations.
+- The memory allocation is based on stack, not heap.
 - Simple, Flexible, Extensible, Powerful and Structured.
 - Child loggers which inherit and add their own private context.
 - Built-in support for logging to files, syslog, and the network. See `Writer`.
