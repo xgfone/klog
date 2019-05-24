@@ -54,9 +54,7 @@ func TextEncoder() Encoder {
 			buf.WriteString(" ")
 			buf.WriteString(field.Key)
 			buf.WriteString("=")
-			if ok, err := buf.AppendAny(field.Value); !ok {
-				buf.WriteString(fmt.Sprintf("<klog.TextEncoder:Error: unknown type '%T'>", field.Value))
-			} else if err != nil {
+			if err := buf.AppendAnyFmt(field.Value); err != nil {
 				buf.WriteString("<klog.TextEncoder:Error:")
 				buf.WriteString(err.Error())
 				buf.WriteString(">")
