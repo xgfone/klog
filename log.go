@@ -65,6 +65,11 @@ func newLog(logger Logger, level Level, depth int) Log {
 	return Log{fields: fields, logger: logger, level: level, depth: depth, ok: ok}
 }
 
+// E is equal to l.K("err", err).
+func (l Log) E(err error) Log {
+	return l.F(Field{Key: "err", Value: err})
+}
+
 // K appends the key-value pair into the structured log.
 func (l Log) K(key string, value interface{}) Log {
 	return l.F(Field{Key: key, Value: value})
@@ -201,6 +206,11 @@ func newLLog(logger Logger, depth int, fields ...Field) LLog {
 	_fields := append(fieldPool.Get().([]Field), logger.fields...)
 	_fields = append(_fields, fields...)
 	return LLog{logger: logger, depth: depth, fields: _fields}
+}
+
+// E is equal to l.K("err", err).
+func (l LLog) E(err error) LLog {
+	return l.F(Field{Key: "err", Value: err})
 }
 
 // K appends the key-value pair into the structured log.

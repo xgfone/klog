@@ -20,6 +20,9 @@ var Std = New()
 ////////////////////////////////////////////////////////////////////////////
 /// For LLog interface
 
+// E is equal to Std.K("err", err).
+func E(err error) LLog { return Std.K("err", err) }
+
 // F is equal to Std.F(fields...).
 func F(fields ...Field) LLog { return Std.F(fields...) }
 

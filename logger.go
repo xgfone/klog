@@ -233,6 +233,14 @@ func (l Logger) K(key string, value interface{}) LLog {
 	return l.F(Field{Key: key, Value: value})
 }
 
+// E is equal to l.K("err", err).
+//
+// Notice: you must continue to call the level method, such as Levelf(),
+// Debugf(), Infof(), Errorf(), etc, to trigger it.
+func (l Logger) E(err error) LLog {
+	return l.F(Field{Key: "err", Value: err})
+}
+
 // Levelf emits a specified `level` log, which is equal to l.F().Levelf(level, msg, args...).
 func (l Logger) Levelf(level Level, msg string, args ...interface{}) {
 	newLLog(l, l.depth+1).Levelf(level, msg, args...)
