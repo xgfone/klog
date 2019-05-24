@@ -15,8 +15,32 @@
 package klog
 
 import (
+	"os"
 	"strconv"
+	"sync"
 )
+
+var cleaners []func()
+var cleanerOnce sync.Once
+
+func callCleaner() {
+	for _, clean := range cleaners {
+		if clean != nil {
+			clean()
+		}
+	}
+}
+
+func exit(code int) {
+	cleanerOnce.Do(callCleaner)
+	os.Exit(code)
+}
+
+// AppendCleaner appends the clean functions, which will be called when emitting
+// the FATAL log.
+func AppendCleaner(clean ...func()) {
+	cleaners = append(cleaners, clean...)
+}
 
 // ParseSize parses the size string. The size maybe have a unit suffix,
 // such as "123", "123M, 123G". Valid size units are "b", "B", "k", "K",

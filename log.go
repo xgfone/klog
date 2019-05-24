@@ -16,7 +16,6 @@ package klog
 
 import (
 	"fmt"
-	"os"
 	"sync"
 	"time"
 )
@@ -160,12 +159,7 @@ func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) 
 	putBuilder(buf)
 
 	if level >= LvlFatal {
-		for _, clean := range cleaners {
-			if clean != nil {
-				clean()
-			}
-		}
-		os.Exit(1)
+		exit(1)
 	} else if level >= LvlPanic {
 		record.Fields = nil
 		panic(record)
