@@ -137,3 +137,29 @@ func TestStdJSONEncoder(t *testing.T) {
 		t.Error(ms)
 	}
 }
+
+type keyValueTest struct {
+	key   string
+	value interface{}
+}
+
+func (kv keyValueTest) Key() string {
+	return kv.key
+}
+
+func (kv keyValueTest) Value() interface{} {
+	return kv.value
+}
+
+func TestKV(t *testing.T) {
+	buf := NewBuilder(128)
+	logger := New(StreamWriter(buf))
+	logger.V(keyValueTest{key: "key", value: 123}).Infof("test %s", "kv")
+
+	buf.TrimNewline()
+	s := buf.String()
+	s = s[strings.IndexByte(s, ' '):]
+	if s != ` lvl=INFO key=123 msg=test kv` {
+		t.Error(s)
+	}
+}

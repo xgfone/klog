@@ -18,6 +18,12 @@ import (
 	"os"
 )
 
+// KV represents a key-value interface.
+type KV interface {
+	Key() string
+	Value() interface{}
+}
+
 // Field represents a key-value pair.
 type Field struct {
 	Key   string
@@ -231,6 +237,18 @@ func (l Logger) F(fields ...Field) LLog {
 // Debugf(), Infof(), Errorf(), etc, to trigger it.
 func (l Logger) K(key string, value interface{}) LLog {
 	return l.F(Field{Key: key, Value: value})
+}
+
+// V is equal to F, which will convert the type KV to Field.
+func (l Logger) V(kvs ...KV) LLog {
+	switch len(kvs) {
+	case 0:
+		return newLLog(l, l.depth)
+	case 1:
+		return l.K(kvs[0].Key(), kvs[0].Value())
+	default:
+		return l.K(kvs[0].Key(), kvs[0].Value()).V(kvs[1:]...)
+	}
 }
 
 // E is equal to l.K("err", err).

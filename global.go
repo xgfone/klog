@@ -29,6 +29,9 @@ func F(fields ...Field) LLog { return Std.F(fields...) }
 // K is equal to Std.K(key, value).
 func K(key string, value interface{}) LLog { return Std.K(key, value) }
 
+// V is equal to Std.V(kvs...).
+func V(kvs ...KV) LLog { return Std.V(kvs...) }
+
 // Lf is equal to `Std.Lf(level, msg, args...)` to emit a specified `level` log.
 func Lf(level Level, msg string, args ...interface{}) { Std.AddDepth(1).Lf(level, msg, args...) }
 

@@ -75,6 +75,16 @@ func (l Log) K(key string, value interface{}) Log {
 	return l.F(Field{Key: key, Value: value})
 }
 
+// V is equal to F, which will convert the type KV to Field.
+func (l Log) V(kvs ...KV) Log {
+	if l.ok {
+		for _, kv := range kvs {
+			l.fields = append(l.fields, Field{Key: kv.Key(), Value: kv.Value()})
+		}
+	}
+	return l
+}
+
 // F appends more than one key-value pair into the structured log by the field.
 func (l Log) F(fields ...Field) Log {
 	if l.ok {
@@ -216,6 +226,14 @@ func (l LLog) E(err error) LLog {
 // K appends the key-value pair into the structured log.
 func (l LLog) K(key string, value interface{}) LLog {
 	return l.F(Field{Key: key, Value: value})
+}
+
+// V is equal to F, which will convert the type KV to Field.
+func (l LLog) V(kvs ...KV) LLog {
+	for _, kv := range kvs {
+		l.fields = append(l.fields, Field{Key: kv.Key(), Value: kv.Value()})
+	}
+	return l
 }
 
 // F appends more than one key-value pair into the structured log by the field.
