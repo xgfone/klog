@@ -39,7 +39,7 @@ type Logger struct {
 //
 // The default level is `LvlDebug`, and the default encoder is `TextEncoder()`.
 func New(w ...Writer) Logger {
-	out := StreamWriter(os.Stdout)
+	out := SafeWriter(StreamWriter(os.Stdout))
 	if len(w) > 0 && w[0] != nil {
 		out = w[0]
 	}
