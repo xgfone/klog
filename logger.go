@@ -278,6 +278,9 @@ func (l Logger) Debugf(msg string, args ...interface{}) { newLLog(l, l.depth+1).
 // Infof emits a INFO log, which is equal to l.Levelf(LvlInfo, msg, args...).
 func (l Logger) Infof(msg string, args ...interface{}) { newLLog(l, l.depth+1).Infof(msg, args...) }
 
+// Printf is the alias of Infof.
+func (l Logger) Printf(msg string, args ...interface{}) { newLLog(l, l.depth+1).Infof(msg, args...) }
+
 // Warnf emits a WARN log, which is equal to l.Levelf(LvlWarn, msg, args...).
 func (l Logger) Warnf(msg string, args ...interface{}) { newLLog(l, l.depth+1).Warnf(msg, args...) }
 

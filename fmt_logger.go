@@ -16,6 +16,24 @@ package klog
 
 import "io"
 
+// Printfer is a Printf interface.
+type Printfer interface {
+	Printf(msg string, args ...interface{})
+}
+
+// PrintfFunc converts a function to Printfer.
+func PrintfFunc(f func(msg string, args ...interface{})) Printfer {
+	return printfer{f: f}
+}
+
+type printfer struct {
+	f func(string, ...interface{})
+}
+
+func (p printfer) Printf(msg string, args ...interface{}) {
+	p.f(msg, args...)
+}
+
 // FmtLoggerError represents a logger based on the % foramtter.
 type FmtLoggerError interface {
 	Writer() io.Writer
