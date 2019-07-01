@@ -28,7 +28,7 @@ func TestFmtLogger(t *testing.T) {
 	if index := strings.IndexByte(s, ' '); index > 0 {
 		s = s[index:]
 	}
-	if s != " lvl=INFO caller=fmt_logger_test.go:25 msg=hello world\n" {
+	if s != " lvl=INFO caller=fmt_logger_test.go:25 msg=\"hello world\"\n" {
 		t.Error(s)
 	}
 }
@@ -42,7 +42,7 @@ func TestFmtLoggerError(t *testing.T) {
 	if index := strings.IndexByte(s, ' '); index > 0 {
 		s = s[index:]
 	}
-	if s != " lvl=INFO caller=fmt_logger_test.go:39 msg=hello world\n" {
+	if s != " lvl=INFO caller=fmt_logger_test.go:39 msg=\"hello world\"\n" {
 		t.Error(s)
 	}
 }

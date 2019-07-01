@@ -27,7 +27,7 @@ func TestLogger(t *testing.T) {
 
 	s := buf.String()
 	s = s[strings.IndexByte(s, ' '):]
-	if s != " lvl=INFO caller1=logger_test.go:26 caller2=logger_test.go:26 msg=test logger\n" {
+	if s != " lvl=INFO caller1=logger_test.go:26 caller2=logger_test.go:26 msg=\"test logger\"\n" {
 		t.Error(s)
 	}
 
@@ -36,7 +36,7 @@ func TestLogger(t *testing.T) {
 
 	s = buf.String()
 	s = s[strings.IndexByte(s, ' '):]
-	if s != " lvl=INFO caller1=logger_test.go:35 caller2=logger_test.go:35 msg=test logger\n" {
+	if s != " lvl=INFO caller1=logger_test.go:35 caller2=logger_test.go:35 msg=\"test logger\"\n" {
 		t.Error(s)
 	}
 
@@ -45,7 +45,7 @@ func TestLogger(t *testing.T) {
 
 	s = buf.String()
 	s = s[strings.IndexByte(s, ' '):]
-	if s != " lvl=INFO caller1=logger_test.go:44 msg=test 123\n" {
+	if s != " lvl=INFO caller1=logger_test.go:44 msg=\"test 123\"\n" {
 		t.Error(s)
 	}
 }
@@ -159,7 +159,7 @@ func TestKV(t *testing.T) {
 	buf.TrimNewline()
 	s := buf.String()
 	s = s[strings.IndexByte(s, ' '):]
-	if s != ` lvl=INFO key=123 msg=test kv` {
+	if s != ` lvl=INFO key=123 msg="test kv"` {
 		t.Error(s)
 	}
 }
