@@ -17,7 +17,9 @@ package klog
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
+	"unicode"
 )
 
 // Encoder is the encoder of the log record.
@@ -33,7 +35,23 @@ func NothingEncoder() Encoder { return func(buf *Builder, r Record) {} }
 // Notice: the key name of the level is "lvl", that of the time is "t"
 // with time.RFC3339Nano, and that of the message is "msg".
 // If the logger name exists, it will encode it and the key name is "logger".
-func TextEncoder() Encoder {
+//
+// If quote is true and the string value contains the space, it will be surrounded
+// by a pair of the double quotation marks.
+func TextEncoder(quote ...bool) Encoder {
+	var _quote bool
+	if len(quote) > 0 && quote[0] {
+		_quote = true
+	}
+
+	appendString := func(buf *Builder, s string) {
+		if _quote && strings.IndexFunc(s, unicode.IsSpace) > -1 {
+			buf.AppendJSONString(s)
+		} else {
+			buf.AppendString(s)
+		}
+	}
+
 	return func(buf *Builder, r Record) {
 		// Time
 		buf.WriteString("t=")
@@ -42,7 +60,7 @@ func TextEncoder() Encoder {
 		// Logger Name
 		if r.Name != "" {
 			buf.WriteString(" logger=")
-			buf.WriteString(r.Name)
+			appendString(buf, r.Name)
 		}
 
 		// Level
@@ -54,16 +72,32 @@ func TextEncoder() Encoder {
 			buf.WriteString(" ")
 			buf.WriteString(field.Key)
 			buf.WriteString("=")
-			if err := buf.AppendAnyFmt(field.Value); err != nil {
-				buf.WriteString("<klog.TextEncoder:Error:")
-				buf.WriteString(err.Error())
-				buf.WriteString(">")
+
+			switch v := field.Value.(type) {
+			case string:
+				appendString(buf, v)
+			case error:
+				if v == nil {
+					buf.AppendAny(nil)
+				} else {
+					appendString(buf, v.Error())
+				}
+			case time.Time:
+				buf.AppendTime(v, time.RFC3339Nano)
+			case fmt.Stringer:
+				appendString(buf, v.String())
+			default:
+				if err := buf.AppendAnyFmt(field.Value); err != nil {
+					buf.WriteString("<klog.TextEncoder:Error:")
+					buf.WriteString(err.Error())
+					buf.WriteString(">")
+				}
 			}
 		}
 
 		// Message
 		buf.WriteString(" msg=")
-		buf.WriteString(r.Msg)
+		appendString(buf, r.Msg)
 		buf.WriteByte('\n')
 	}
 }

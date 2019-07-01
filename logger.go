@@ -49,7 +49,7 @@ func New(w ...Writer) Logger {
 	if len(w) > 0 && w[0] != nil {
 		out = w[0]
 	}
-	return Logger{writer: out, level: LvlDebug, encoder: TextEncoder()}
+	return Logger{writer: out, level: LvlDebug, encoder: TextEncoder(true)}
 }
 
 // NewSimpleLogger returns a new Logger based on the file writer by using
