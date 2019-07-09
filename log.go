@@ -138,6 +138,7 @@ func (l Log) Msgf(format string, args ...interface{}) {
 
 	if len(args) == 0 {
 		l.emit(format)
+		return
 	}
 	l.emit(fmt.Sprintf(format, args...))
 }
