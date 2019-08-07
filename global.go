@@ -58,9 +58,9 @@ func SetLevel(level Level) *Logger {
 	return Std.SetLevel(level)
 }
 
-// SetDepth is equal to Std.SetDepth(depth).
-func SetDepth(depth int) *Logger {
-	return Std.SetDepth(depth)
+// AddDepth is equal to Std.AddDepthSelf(depth).
+func AddDepth(depth int) *Logger {
+	return Std.AddDepthSelf(depth)
 }
 
 // SetName is equal to Std.SetName(name).

@@ -166,7 +166,7 @@ func TestKV(t *testing.T) {
 
 func TestLoggerSetter(t *testing.T) {
 	log := New()
-	log.SetDepth(100)
+	log.AddDepthSelf(100)
 
 	if newDepth := log.GetDepth(); newDepth != 100 {
 		t.Errorf("the depth '%d' is not updated", newDepth)
@@ -179,7 +179,7 @@ func TestGetLogger(t *testing.T) {
 		t.Error(`GetLogger("") is not Std`)
 	}
 
-	log1 := GetLogger("log1").SetDepth(100)
+	log1 := GetLogger("log1").AddDepthSelf(100)
 	log2 := GetLogger("log1")
 	if log1 != log2 || log1.GetName() != log2.GetName() || log2.GetDepth() != 100 {
 		t.Error(`GetLogger("log1") != GetLogger("log1")`)

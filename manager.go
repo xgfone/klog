@@ -74,11 +74,11 @@ func (m *Manager) AddKv(key string, value interface{}) {
 	m.lock.Unlock()
 }
 
-// SetDepth sets the depth to all the loggers.
-func (m *Manager) SetDepth(depth int) {
+// AddDepth adds the depth to all the loggers.
+func (m *Manager) AddDepth(depth int) {
 	m.lock.Lock()
 	for _, logger := range m.loggers {
-		logger.SetDepth(depth)
+		logger.AddDepthSelf(depth)
 	}
 	m.lock.Unlock()
 }

@@ -109,9 +109,9 @@ func (l Logger) WithDepth(depth int) Logger {
 	return l
 }
 
-// SetDepth resets the depth of the caller of the logger and returns itself
+// AddDepthSelf resets the depth of the caller of the logger and returns itself
 // for chaining call.
-func (l *Logger) SetDepth(depth int) *Logger {
+func (l *Logger) AddDepthSelf(depth int) *Logger {
 	if depth < 0 {
 		panic("the log depth must not be less than 0")
 	}
