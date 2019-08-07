@@ -163,3 +163,12 @@ func TestKV(t *testing.T) {
 		t.Error(s)
 	}
 }
+
+func TestLoggerSetter(t *testing.T) {
+	log := New()
+	log.SetDepth(100)
+
+	if newDepth := log.GetDepth(); newDepth != 100 {
+		t.Errorf("the depth '%d' is not updated", newDepth)
+	}
+}

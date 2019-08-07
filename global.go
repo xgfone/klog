@@ -18,6 +18,49 @@ package klog
 var Std = New()
 
 ////////////////////////////////////////////////////////////////////////////
+/// Setter Interface
+
+// AddKv is equal to Std.AddKv(key, value).
+func AddKv(key string, value interface{}) *Logger {
+	return Std.AddKv(key, value)
+}
+
+// AddField is equal to Std.AddField(fields...).
+func AddField(fields ...Field) *Logger {
+	return Std.AddField(fields...)
+}
+
+// AddHook is equal to Std.AddHook(hooks...).
+func AddHook(hooks ...Hook) *Logger {
+	return Std.AddHook(hooks...)
+}
+
+// SetEncoder is equal to Std.SetEncoder(encoder).
+func SetEncoder(encoder Encoder) *Logger {
+	return Std.SetEncoder(encoder)
+}
+
+// SetWriter is equal to Std.SetWriter(w).
+func SetWriter(w Writer) *Logger {
+	return Std.SetWriter(w)
+}
+
+// SetLevel is equal to Std.SetLevel(level).
+func SetLevel(level Level) *Logger {
+	return Std.SetLevel(level)
+}
+
+// SetDepth is equal to Std.SetDepth(depth).
+func SetDepth(depth int) *Logger {
+	return Std.SetDepth(depth)
+}
+
+// SetName is equal to Std.SetName(name).
+func SetName(name string) *Logger {
+	return Std.SetName(name)
+}
+
+////////////////////////////////////////////////////////////////////////////
 /// For LLog interface
 
 // E is equal to Std.K("err", err).

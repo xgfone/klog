@@ -66,6 +66,8 @@ import "github.com/xgfone/klog"
 
 func main() {
 	klog.Std = klog.Std.WithLevel(klog.LvlWarn)
+	// Or
+	// klog.SetLevel(klog.LvlWarn)
 
 	// Style 1:
 	klog.Info().K("key", "value").Msg("don't output")
@@ -186,7 +188,6 @@ type Valuer func(Record) (v interface{})
 
 If the type of a certain value is `Valuer`, the logger engine will call it to get the corresponding value firstly before calling the encoder. There are some built-in `Valuer`, such as `Caller()`, `CallerStack()`, `LineNo()`, `LineNoAsInt()`, `FuncName()`, `FuncFullName()`, `FileName()`, `FileLongName()` and `Package()`.
 
-
 ```go
 package main
 
@@ -195,6 +196,9 @@ import "github.com/xgfone/klog"
 func main() {
 	log := klog.Std.WithKv("caller", klog.Caller())
 	log.Info().K("stack", klog.CallerStack()).Msg("hello world")
+	// Or
+	// klog.AddKv("caller", klog.Caller())
+	// klog.Info().K("stack", klog.CallerStack()).Msg("hello world")
 
 	// Output:
 	// t=2019-05-22T16:41:03.1281272+08:00 lvl=INFO caller=main.go:7 stack=[main.go:7] msg=hello world
@@ -216,9 +220,11 @@ import "github.com/xgfone/klog"
 
 func main() {
 	klog.Std = klog.Std.WithHook(klog.EnableLoggerFromEnv("mod"))
-
 	log := klog.Std.WithName("debug")
 	log.Info().Msg("hello world")
+	// Or
+	// klog.SetHook(klog.EnableLoggerFromEnv("mod")).SetName("debug")
+	// klog.Info().Msg("hello world")
 
 	// $ go run main.go  # No output
 	// $ mod=debug=1 go run main.go

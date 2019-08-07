@@ -92,10 +92,26 @@ func (l Logger) WithName(name string) Logger {
 	return l
 }
 
+// SetName resets the name of the logger and returns itself for chaining call.
+func (l *Logger) SetName(name string) *Logger {
+	l.name = name
+	return l
+}
+
 // WithDepth returns a new Logger with the caller depth.
 //
 // Notice: 0 stands for the stack where the caller is.
 func (l Logger) WithDepth(depth int) Logger {
+	if depth < 0 {
+		panic("the log depth must not be less than 0")
+	}
+	l.depth = depth
+	return l
+}
+
+// SetDepth resets the depth of the caller of the logger and returns itself
+// for chaining call.
+func (l *Logger) SetDepth(depth int) *Logger {
 	if depth < 0 {
 		panic("the log depth must not be less than 0")
 	}
@@ -112,8 +128,26 @@ func (l Logger) WithLevel(level Level) Logger {
 	return l
 }
 
+// SetLevel resets the level of the logger and returns itself for chaining call.
+func (l *Logger) SetLevel(level Level) *Logger {
+	if level < 0 {
+		panic("the log level must not be less than 0")
+	}
+	l.level = level
+	return l
+}
+
 // WithWriter returns a new Logger with the writer w.
 func (l Logger) WithWriter(w Writer) Logger {
+	if w == nil {
+		panic("the log writer must not be nil")
+	}
+	l.writer = w
+	return l
+}
+
+// SetWriter resets the writer of the logger and returns itself for chaining call.
+func (l *Logger) SetWriter(w Writer) *Logger {
 	if w == nil {
 		panic("the log writer must not be nil")
 	}
@@ -130,14 +164,35 @@ func (l Logger) WithEncoder(encoder Encoder) Logger {
 	return l
 }
 
+// SetEncoder resets the encoder of the logger and returns itself for chaining call.
+func (l *Logger) SetEncoder(encoder Encoder) *Logger {
+	if encoder == nil {
+		panic("the log encoder must not be nil")
+	}
+	l.encoder = encoder
+	return l
+}
+
 // WithHook returns a new Logger with the hook, which will append the hook.
 func (l Logger) WithHook(hook ...Hook) Logger {
 	l.hooks = append(l.hooks, hook...)
 	return l
 }
 
+// AddHook adds the hooks of the logger and returns itself for chaining call.
+func (l *Logger) AddHook(hooks ...Hook) *Logger {
+	l.hooks = append(l.hooks, hooks...)
+	return l
+}
+
 // WithField returns a new Logger with the new field context.
 func (l Logger) WithField(fields ...Field) Logger {
+	l.fields = append(l.fields, fields...)
+	return l
+}
+
+// AddField adds the fields of the logger and returns itself for chaining call.
+func (l *Logger) AddField(fields ...Field) *Logger {
 	l.fields = append(l.fields, fields...)
 	return l
 }
@@ -148,6 +203,15 @@ func (l Logger) WithField(fields ...Field) Logger {
 //
 func (l Logger) WithKv(key string, value interface{}) Logger {
 	return l.WithField(Field{Key: key, Value: value})
+}
+
+// AddKv adds the key-value as the field context, which is equal to
+//
+//   l.AddField(Field{Key: key, Value: value})
+//
+// It returns itself for chaining call.
+func (l *Logger) AddKv(key string, value interface{}) *Logger {
+	return l.AddField(Field{Key: key, Value: value})
 }
 
 // GetName returns the logger name.
