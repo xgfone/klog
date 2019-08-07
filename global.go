@@ -14,8 +14,16 @@
 
 package klog
 
-// Std is the global default Logger.
+// Std is the default global Logger.
 var Std = New()
+
+// DefaultManager is the default global manager of the logger.
+var DefaultManager = NewManager()
+
+// GetLogger is equal to DefaultManager.GetLogger(name).
+func GetLogger(name string) *Logger {
+	return DefaultManager.GetLogger(name)
+}
 
 ////////////////////////////////////////////////////////////////////////////
 /// Setter Interface

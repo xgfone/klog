@@ -232,6 +232,15 @@ func main() {
 }
 ```
 
+### Logger Manager
+There is default global manager, `DefaultManager`, which manages and caches all the loggers. You can use `GetLogger(name)` to get the logger from the cache, or return a new one if there is not the logger.
+
+```go
+debugLogger := klog.GetLogger("debug")
+serverLogger := klog.GetLogger("server")
+defaultLogger := klog.GetLogger("")
+```
+
 ## Performance
 
 The log framework itself has no any performance costs and the key of the bottleneck is the encoder.
