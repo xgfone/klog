@@ -184,4 +184,9 @@ func TestGetLogger(t *testing.T) {
 	if log1 != log2 || log1.GetName() != log2.GetName() || log2.GetDepth() != 200 {
 		t.Error(`GetLogger("log1") != GetLogger("log1")`)
 	}
+
+	log1.SetDepth(123)
+	if log2.GetDepth() != 123 {
+		t.Error("Logger.SetDepth() is not reset")
+	}
 }
