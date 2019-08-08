@@ -179,9 +179,9 @@ func TestGetLogger(t *testing.T) {
 		t.Error(`GetLogger("") is not Std`)
 	}
 
-	log1 := GetLogger("log1").AddDepthSelf(100)
+	log1 := GetLogger("log1").AddDepthSelf(100).AddDepthSelf(100)
 	log2 := GetLogger("log1")
-	if log1 != log2 || log1.GetName() != log2.GetName() || log2.GetDepth() != 100 {
+	if log1 != log2 || log1.GetName() != log2.GetName() || log2.GetDepth() != 200 {
 		t.Error(`GetLogger("log1") != GetLogger("log1")`)
 	}
 }
