@@ -43,6 +43,16 @@ func AddHook(hooks ...Hook) *Logger {
 	return Std.AddHook(hooks...)
 }
 
+// AddDepth is equal to Std.AddDepthSelf(depth).
+func AddDepth(depth int) *Logger {
+	return Std.AddDepthSelf(depth)
+}
+
+// SetDepth is equal to Std.SetDepth(depth).
+func SetDepth(depth int) *Logger {
+	return Std.SetDepth(depth)
+}
+
 // SetEncoder is equal to Std.SetEncoder(encoder).
 func SetEncoder(encoder Encoder) *Logger {
 	return Std.SetEncoder(encoder)
@@ -56,11 +66,6 @@ func SetWriter(w Writer) *Logger {
 // SetLevel is equal to Std.SetLevel(level).
 func SetLevel(level Level) *Logger {
 	return Std.SetLevel(level)
-}
-
-// AddDepth is equal to Std.AddDepthSelf(depth).
-func AddDepth(depth int) *Logger {
-	return Std.AddDepthSelf(depth)
 }
 
 // SetName is equal to Std.SetName(name).

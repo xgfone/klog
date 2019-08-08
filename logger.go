@@ -86,6 +86,16 @@ func (l Logger) AddDepth(depth int) Logger {
 	return l
 }
 
+// AddDepthSelf increases the depth of the caller of the logger and returns itself
+// for chaining call.
+func (l *Logger) AddDepthSelf(depth int) *Logger {
+	if depth < 0 {
+		panic("the log depth must not be less than 0")
+	}
+	l.depth += depth
+	return l
+}
+
 // WithName returns a new Logger with the name.
 func (l Logger) WithName(name string) Logger {
 	l.name = name
@@ -109,13 +119,13 @@ func (l Logger) WithDepth(depth int) Logger {
 	return l
 }
 
-// AddDepthSelf increases the depth of the caller of the logger and returns itself
+// SetDepth resets the depth of the caller of the logger and returns itself
 // for chaining call.
-func (l *Logger) AddDepthSelf(depth int) *Logger {
+func (l *Logger) SetDepth(depth int) *Logger {
 	if depth < 0 {
 		panic("the log depth must not be less than 0")
 	}
-	l.depth += depth
+	l.depth = depth
 	return l
 }
 

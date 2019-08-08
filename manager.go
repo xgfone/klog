@@ -83,6 +83,15 @@ func (m *Manager) AddDepth(depth int) {
 	m.lock.Unlock()
 }
 
+// SetDepth resets the depth to all the loggers.
+func (m *Manager) SetDepth(depth int) {
+	m.lock.Lock()
+	for _, logger := range m.loggers {
+		logger.SetDepth(depth)
+	}
+	m.lock.Unlock()
+}
+
 // SetEncoder sets the encoder to all the loggers.
 func (m *Manager) SetEncoder(encoder Encoder) {
 	m.lock.Lock()
