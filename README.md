@@ -65,9 +65,9 @@ package main
 import "github.com/xgfone/klog"
 
 func main() {
-	klog.Std = klog.Std.WithLevel(klog.LvlWarn)
+	klog.Std = klog.Std.WithLevelString("warn")
 	// Or
-	// klog.SetLevel(klog.LvlWarn)
+	// klog.SetLevelString("warn")
 
 	// Style 1:
 	klog.Info().K("key", "value").Msg("don't output")

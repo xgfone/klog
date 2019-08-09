@@ -68,6 +68,11 @@ func SetLevel(level Level) *Logger {
 	return Std.SetLevel(level)
 }
 
+// SetLevelString is equal to Std.SetLevelString(level).
+func SetLevelString(level string) *Logger {
+	return Std.SetLevelString(level)
+}
+
 // SetName is equal to Std.SetName(name).
 func SetName(name string) *Logger {
 	return Std.SetName(name)

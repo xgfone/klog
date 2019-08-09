@@ -190,3 +190,11 @@ func TestGetLogger(t *testing.T) {
 		t.Error("Logger.SetDepth() is not reset")
 	}
 }
+
+func TestLogger_SetLevelString(t *testing.T) {
+	log := New()
+	log.SetLevelString("error")
+	if lvl := log.GetLevel(); lvl != LvlError {
+		t.Error(lvl)
+	}
+}
