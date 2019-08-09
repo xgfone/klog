@@ -135,7 +135,7 @@ type Writer interface {
 
 All implementing the interface `Writer` are a Writer.
 
-There are some built-in writers, such as `DiscardWriter`, `LevelWriter`, `SafeWriter`, `StreamWriter`, `MultiWriter`, `FailoverWriter`, `ReopenWriter`, `NetWriter`, `SyslogWriter` and`SyslogNetWriter`. It also supplies a rotating-size file writer `SizedRotatingFile`.
+There are some built-in writers, such as `DiscardWriter`, `LevelWriter`, `SafeWriter`, `StreamWriter`, `MultiWriter`, `FailoverWriter`, `ReopenWriter`, `FileWriter`, `NetWriter`, `SyslogWriter` and`SyslogNetWriter`. It also supplies a rotating-size file writer `SizedRotatingFile`.
 
 ```go
 package main
@@ -147,14 +147,14 @@ import (
 )
 
 func main() {
-	file, err := klog.NewSizedRotatingFile("test.log", 1024*1024*100, 100)
+	file, err := klog.FileWriter("test.log", "100M", 100)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer file.Close()
 
-	log := klog.New(klog.StreamWriter(file))
+	log := klog.New(file)
 	log.Info().K("key", "value").Msg("hello world")
 
 	// Output to file test.log:
