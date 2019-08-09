@@ -21,6 +21,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -269,6 +270,42 @@ func FailoverWriter(outs ...Writer) Writer {
 		}
 		return errs
 	})
+}
+
+// FileWriter returns a writer based the file, which uses NewSizedRotatingFile
+// to generate the file writer. If filename is "", however, it will return
+// a os.Stdout writer instead.
+//
+// filesize is parsed by ParseSize to get the size of the log file.
+// If it is "", it is "100M" by default.
+//
+// filenum is the number of the log file. If it is 0 or negative,
+// it will reset to 100.
+//
+// Notice: if the directory in where filename is does not exist, it will be
+// created automatically.
+func FileWriter(filename, filesize string, filenum int) (Writer, error) {
+	if filename == "" {
+		return SafeWriter(StreamWriter(os.Stdout)), nil
+	}
+
+	if filesize == "" {
+		filesize = "100M"
+	}
+	size, err := ParseSize(filesize)
+	if err != nil {
+		return nil, err
+	} else if filenum < 1 {
+		filenum = 100
+	}
+
+	os.MkdirAll(filepath.Dir(filename), 0755)
+	file, err := NewSizedRotatingFile(filename, int(size), filenum)
+	if err != nil {
+		return nil, err
+	}
+	AppendCleaner(func() { file.Close() })
+	return StreamWriter(file), nil
 }
 
 // NewSizedRotatingFile returns a new SizedRotatingFile.
