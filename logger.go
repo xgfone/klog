@@ -16,6 +16,7 @@ package klog
 
 import (
 	"os"
+	"path/filepath"
 )
 
 // KV represents a key-value interface.
@@ -58,12 +59,18 @@ func New(w ...Writer) Logger {
 // If filePath is "", it will ignore fileSize and fileNum, and use os.Stdout
 // as the writer. If fileSize is "", it is "100M" by default. And fileNum is
 // 100 by default.
+//
+// Notice: if the directory in where filePath is does not exist, it will be
+// created automatically.
 func NewSimpleLogger(level, filePath, fileSize string, fileNum int) (Logger, error) {
 	lvl := NameToLevel(level)
 	if filePath == "" {
 		return New().WithLevel(lvl), nil
 	}
 
+	if fileSize == "" {
+		fileSize = "100M"
+	}
 	size, err := ParseSize(fileSize)
 	if err != nil {
 		return Logger{}, err
@@ -71,6 +78,7 @@ func NewSimpleLogger(level, filePath, fileSize string, fileNum int) (Logger, err
 		fileNum = 100
 	}
 
+	os.MkdirAll(filepath.Dir(filePath), 0755)
 	file, err := NewSizedRotatingFile(filePath, int(size), fileNum)
 	if err != nil {
 		return Logger{}, err
