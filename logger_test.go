@@ -16,6 +16,7 @@ package klog
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -196,5 +197,18 @@ func TestLogger_SetLevelString(t *testing.T) {
 	log.SetLevelString("error")
 	if lvl := log.GetLevel(); lvl != LvlError {
 		t.Error(lvl)
+	}
+}
+
+func TestLoggerEf(t *testing.T) {
+	buf := NewBuilder(128)
+	logger := New(StreamWriter(buf)).WithKv("caller", Caller())
+	logger.Ef(fmt.Errorf("test_error"), "test %s", "error")
+
+	buf.TrimNewline()
+	s := buf.String()
+	s = s[strings.IndexByte(s, ' '):]
+	if s != ` lvl=ERROR caller=logger_test.go:206 err=test_error msg="test error"` {
+		t.Error(s)
 	}
 }

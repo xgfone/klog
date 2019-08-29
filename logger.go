@@ -31,6 +31,11 @@ type Field struct {
 	Value interface{}
 }
 
+// NewErrField returns a Field with the key "err" and the value err.
+func NewErrField(err error) Field {
+	return Field{Key: "err", Value: err}
+}
+
 // Logger is a structured logger based on key-value.
 type Logger struct {
 	name    string
@@ -343,12 +348,12 @@ func (l Logger) V(kvs ...KV) LLog {
 	}
 }
 
-// E is equal to l.K("err", err).
+// E is equal to l.F(NewErrField(err)).
 //
 // Notice: you must continue to call the level method, such as Levelf(),
 // Debugf(), Infof(), Errorf(), etc, to trigger it.
 func (l Logger) E(err error) LLog {
-	return l.F(Field{Key: "err", Value: err})
+	return l.F(NewErrField(err))
 }
 
 // Levelf emits a specified `level` log, which is equal to l.F().Levelf(level, msg, args...).
@@ -358,7 +363,7 @@ func (l Logger) Levelf(level Level, msg string, args ...interface{}) {
 
 // Ef is equal to l.E(err).Errorf(msg, args...).
 func (l Logger) Ef(err error, msg string, args ...interface{}) {
-	newLLog(l, l.depth+1, Field{Key: "err", Value: err}).Errorf(msg, args...)
+	newLLog(l, l.depth+1, NewErrField(err)).Errorf(msg, args...)
 }
 
 // Lf is short for l.Levelf(level, msg, args...).
