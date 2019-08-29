@@ -93,9 +93,9 @@ func K(key string, value interface{}) LLog { return Std.K(key, value) }
 // V is equal to Std.V(kvs...).
 func V(kvs ...KV) LLog { return Std.V(kvs...) }
 
-// Ef is short for E(err).Errorf(format, args...).
+// Ef is equal to Std.Ef(err, format, args...).
 func Ef(err error, format string, args ...interface{}) {
-	E(err).Errorf(format, args...)
+	Std.AddDepth(1).Ef(err, format, args...)
 }
 
 // Lf is equal to `Std.Lf(level, msg, args...)` to emit a specified `level` log.
