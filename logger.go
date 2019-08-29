@@ -146,6 +146,11 @@ func (l Logger) WithLevel(level Level) Logger {
 	return l
 }
 
+// WithLevelString is equal to l.WithLevel(NameToLevel(level)).
+func (l Logger) WithLevelString(level string) Logger {
+	return l.WithLevel(NameToLevel(level))
+}
+
 // SetLevel resets the level of the logger and returns itself for chaining call.
 func (l *Logger) SetLevel(level Level) *Logger {
 	if level < 0 {
@@ -153,6 +158,11 @@ func (l *Logger) SetLevel(level Level) *Logger {
 	}
 	l.level = level
 	return l
+}
+
+// SetLevelString is equal to l.SetLevel(NameToLevel(level)).
+func (l *Logger) SetLevelString(level string) *Logger {
+	return l.SetLevel(NameToLevel(level))
 }
 
 // WithWriter returns a new Logger with the writer w.

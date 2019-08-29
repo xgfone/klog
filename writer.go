@@ -280,7 +280,7 @@ func FailoverWriter(outs ...Writer) Writer {
 // If it is "", it is "100M" by default.
 //
 // filenum is the number of the log file. If it is 0 or negative,
-// it will reset to 100.
+// it will be reset to 100.
 //
 // Notice: if the directory in where filename is does not exist, it will be
 // created automatically.

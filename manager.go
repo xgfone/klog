@@ -110,6 +110,11 @@ func (m *Manager) SetLevel(level Level) {
 	m.lock.Unlock()
 }
 
+// SetLevelString is equal to m.SetLevel(NameToLevel(level)).
+func (m *Manager) SetLevelString(level string) {
+	m.SetLevel(NameToLevel(level))
+}
+
 // SetWriter sets the writer to all the loggers.
 func (m *Manager) SetWriter(w Writer) {
 	m.lock.Lock()
