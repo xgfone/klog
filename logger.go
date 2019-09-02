@@ -285,6 +285,11 @@ func (l Logger) GetWriter() Writer {
 	return l.writer
 }
 
+// GetEncoder returns the logger encoder.
+func (l Logger) GetEncoder() Encoder {
+	return l.encoder
+}
+
 func (l Logger) emit(level Level, fields ...Field) Log {
 	return newLog(l, level, l.depth).F(fields...)
 }
