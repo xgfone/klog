@@ -265,7 +265,7 @@ func (l *Logger) AddKv(key string, value interface{}) *Logger {
 	return l.AddField(Field{Key: key, Value: value})
 }
 
-// GetName returns the logger name.
+// GetName returns the name of the logger.
 func (l Logger) GetName() string {
 	return l.name
 }
@@ -275,19 +275,24 @@ func (l Logger) GetDepth() int {
 	return l.depth
 }
 
-// GetLevel returns the logger level.
+// GetLevel returns the level of the logger.
 func (l Logger) GetLevel() Level {
 	return l.level
 }
 
-// GetWriter returns the logger writer.
+// GetWriter returns the writer of the logger.
 func (l Logger) GetWriter() Writer {
 	return l.writer
 }
 
-// GetEncoder returns the logger encoder.
+// GetEncoder returns the encoder of the logger.
 func (l Logger) GetEncoder() Encoder {
 	return l.encoder
+}
+
+// GetHooks returns the hooks of the logger.
+func (l Logger) GetHooks() []Hook {
+	return l.hooks
 }
 
 func (l Logger) emit(level Level, fields ...Field) Log {
