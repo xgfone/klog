@@ -109,7 +109,7 @@ func (l Log) F(fields ...Field) Log {
 
 // Ef is short for l.E(err).Msgf(format, args...).
 func (l Log) Ef(err error, format string, args ...interface{}) {
-	l.E(err).Msgf(format, args...)
+	l.AddDepth(1).E(err).Msgf(format, args...)
 }
 
 // Print is equal to l.Msg(args...).
@@ -270,7 +270,7 @@ func (l LLog) F(fields ...Field) LLog {
 
 // Ef is short for l.E(err).Errorf(format, args...).
 func (l LLog) Ef(err error, format string, args ...interface{}) {
-	l.E(err).Errorf(format, args...)
+	l.AddDepth(1).E(err).Errorf(format, args...)
 }
 
 // Lf is short for Level().
