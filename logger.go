@@ -15,6 +15,7 @@
 package klog
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -90,6 +91,23 @@ func NewSimpleLogger(level, filePath, fileSize string, fileNum int) (Logger, err
 	}
 	AppendCleaner(func() { file.Close() })
 	return New(StreamWriter(file)).WithLevel(lvl), nil
+}
+
+type loggerWriter struct {
+	Logger
+	level Level
+}
+
+func (lw loggerWriter) Write(msg []byte) (int, error) {
+	if log := newLog(lw.Logger, lw.level, 0); log.ok {
+		return EmitLog(lw.Logger, lw.level, 1, string(msg), log.fields)
+	}
+	return 0, nil
+}
+
+// ToWriter converts the logger to io.Writer.
+func (l Logger) ToWriter(lvl Level) io.Writer {
+	return loggerWriter{Logger: l, level: lvl}
 }
 
 // AddDepth is the same as WithDepth(depth), but it will grow it with depth,

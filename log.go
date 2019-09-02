@@ -163,10 +163,12 @@ func (l Log) Msgf(format string, args ...interface{}) {
 }
 
 func (l Log) emit(msg string) {
-	emitLog(l.logger, l.level, l.depth, msg, l.fields)
+	EmitLog(l.logger, l.level, l.depth, msg, l.fields)
 }
 
-func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) {
+// EmitLog emits the msg log with the context fields unconditionally,
+// which won't filter the log by the logger name and the level.
+func EmitLog(logger Logger, level Level, depth int, msg string, fields []Field) (n int, err error) {
 	record := Record{
 		Msg:    msg,
 		Time:   time.Now(),
@@ -188,7 +190,7 @@ func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) 
 	buf := getBuilder()
 	logger.encoder(buf, record)
 	if bs := buf.Bytes(); len(bs) > 0 {
-		logger.writer.Write(level, bs)
+		n, err = logger.writer.Write(level, bs)
 	}
 	fieldPool.Put(fields[:0])
 	putBuilder(buf)
@@ -199,6 +201,8 @@ func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) 
 		record.Fields = nil
 		panic(record)
 	}
+
+	return
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -222,7 +226,7 @@ func (l LLog) emit(level Level, format string, args ...interface{}) {
 		format = fmt.Sprintf(format, args...)
 	}
 
-	emitLog(l.logger, level, l.depth, format, l.fields)
+	EmitLog(l.logger, level, l.depth, format, l.fields)
 }
 
 // LLog is another interface of the key-value log with the level.
