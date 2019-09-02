@@ -73,6 +73,12 @@ func newLog(logger Logger, level Level, depth int) Log {
 	return Log{fields: fields, logger: logger, level: level, depth: depth, ok: ok}
 }
 
+// AddDepth adds the depth.
+func (l Log) AddDepth(depth int) Log {
+	l.depth += depth
+	return l
+}
+
 // E is equal to l.F(NewErrField(err)).
 func (l Log) E(err error) Log {
 	return l.F(NewErrField(err))
@@ -230,6 +236,12 @@ func newLLog(logger Logger, depth int, fields ...Field) LLog {
 	_fields := append(fieldPool.Get().([]Field), logger.fields...)
 	_fields = append(_fields, fields...)
 	return LLog{logger: logger, depth: depth, fields: _fields}
+}
+
+// AddDepth adds the depth.
+func (l LLog) AddDepth(depth int) LLog {
+	l.depth += depth
+	return l
 }
 
 // E is equal to l.F(NewErrField(err)).
