@@ -163,12 +163,12 @@ func (l Log) Msgf(format string, args ...interface{}) {
 }
 
 func (l Log) emit(msg string) {
-	EmitLog(l.logger, l.level, l.depth, msg, l.fields)
+	emitLog(l.logger, l.level, l.depth, msg, l.fields)
 }
 
-// EmitLog emits the msg log with the context fields unconditionally,
+// emitLog emits the msg log with the context fields unconditionally,
 // which won't filter the log by the logger name and the level.
-func EmitLog(logger Logger, level Level, depth int, msg string, fields []Field) (n int, err error) {
+func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) (n int, err error) {
 	record := Record{
 		Msg:    msg,
 		Time:   time.Now(),
@@ -226,7 +226,7 @@ func (l LLog) emit(level Level, format string, args ...interface{}) {
 		format = fmt.Sprintf(format, args...)
 	}
 
-	EmitLog(l.logger, level, l.depth, format, l.fields)
+	emitLog(l.logger, level, l.depth, format, l.fields)
 }
 
 // LLog is another interface of the key-value log with the level.

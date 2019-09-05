@@ -100,7 +100,7 @@ type loggerWriter struct {
 
 func (lw loggerWriter) Write(msg []byte) (int, error) {
 	if log := newLog(lw.Logger, lw.level, 0); log.ok {
-		return EmitLog(lw.Logger, lw.level, 1, string(msg), log.fields)
+		return emitLog(lw.Logger, lw.level, 1, string(msg), log.fields)
 	}
 	return 0, nil
 }
