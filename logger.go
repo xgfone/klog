@@ -389,9 +389,14 @@ func (l Logger) Levelf(level Level, msg string, args ...interface{}) {
 	newLLog(l, l.depth+1).Levelf(level, msg, args...)
 }
 
-// Ef is equal to l.E(err).Errorf(msg, args...).
+// Ef is equal to l.E(err).Errorf(msg, args...). If err is nil, however,
+// it is eqaul to l.Infof(msg, args...).
 func (l Logger) Ef(err error, msg string, args ...interface{}) {
-	newLLog(l, l.depth+1, NewErrField(err)).Errorf(msg, args...)
+	if err == nil {
+		newLLog(l, l.depth+1).Infof(msg, args...)
+	} else {
+		newLLog(l, l.depth+1, NewErrField(err)).Errorf(msg, args...)
+	}
 }
 
 // Lf is short for l.Levelf(level, msg, args...).

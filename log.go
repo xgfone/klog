@@ -272,9 +272,14 @@ func (l LLog) F(fields ...Field) LLog {
 	return l
 }
 
-// Ef is short for l.E(err).Errorf(format, args...).
+// Ef is short for l.E(err).Errorf(format, args...). If err is nil, however,
+// it is eqaul to l.Infof(format, args...).
 func (l LLog) Ef(err error, format string, args ...interface{}) {
-	l.AddDepth(1).E(err).Errorf(format, args...)
+	if err == nil {
+		l.AddDepth(1).Infof(format, args...)
+	} else {
+		l.AddDepth(1).E(err).Errorf(format, args...)
+	}
 }
 
 // Lf is short for Level().

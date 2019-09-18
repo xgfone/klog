@@ -211,4 +211,13 @@ func TestLoggerEf(t *testing.T) {
 	if s != ` lvl=ERROR caller=logger_test.go:206 err=test_error msg="test error"` {
 		t.Error(s)
 	}
+
+	buf.Reset()
+	logger.Ef(nil, "test err == nil")
+	buf.TrimNewline()
+	s = buf.String()
+	s = s[strings.IndexByte(s, ' '):]
+	if s != ` lvl=INFO caller=logger_test.go:216 msg="test err == nil"` {
+		t.Error(s)
+	}
 }
