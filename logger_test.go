@@ -221,3 +221,17 @@ func TestLoggerEf(t *testing.T) {
 		t.Error(s)
 	}
 }
+
+func ExampleLogger_IsEnabled() {
+	logger := New().WithLevel(LvlInfo)
+
+	if logger.IsEnabled(LvlDebug) {
+		fmt.Println("debug")
+	}
+	if logger.IsEnabled(LvlInfo) {
+		fmt.Println("info")
+	}
+
+	// Output:
+	// info
+}

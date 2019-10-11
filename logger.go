@@ -110,6 +110,11 @@ func (l Logger) ToWriter(lvl Level) io.Writer {
 	return loggerWriter{Logger: l, level: lvl}
 }
 
+// IsEnabled reports whether the log with the lvl level can be logged.
+func (l Logger) IsEnabled(lvl Level) bool {
+	return lvl >= l.level
+}
+
 // AddDepth is the same as WithDepth(depth), but it will grow it with depth,
 // not reset it to depth.
 func (l Logger) AddDepth(depth int) Logger {

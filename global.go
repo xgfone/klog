@@ -25,6 +25,11 @@ func GetLogger(name string) *Logger {
 	return DefaultManager.GetLogger(name)
 }
 
+// IsEnabled is equal to Std.IsEnabled(lvl).
+func IsEnabled(lvl Level) bool {
+	return Std.IsEnabled(lvl)
+}
+
 ////////////////////////////////////////////////////////////////////////////
 /// Setter Interface
 

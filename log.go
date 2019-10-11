@@ -62,7 +62,7 @@ func newLog(logger Logger, level Level, depth int) Log {
 			ok = false
 		}
 	}
-	if ok && level < logger.level {
+	if ok && !logger.IsEnabled(level) {
 		ok = false
 	}
 
@@ -208,7 +208,7 @@ func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) 
 /////////////////////////////////////////////////////////////////////////////
 
 func (l LLog) emit(level Level, format string, args ...interface{}) {
-	if level < l.logger.level {
+	if !l.logger.IsEnabled(level) {
 		return
 	}
 
@@ -240,6 +240,11 @@ func newLLog(logger Logger, depth int, fields ...Field) LLog {
 	_fields := append(fieldPool.Get().([]Field), logger.fields...)
 	_fields = append(_fields, fields...)
 	return LLog{logger: logger, depth: depth, fields: _fields}
+}
+
+// IsEnabled reports whether the log with the lvl level can be logged.
+func (l LLog) IsEnabled(lvl Level) bool {
+	return l.logger.IsEnabled(lvl)
 }
 
 // AddDepth adds the depth.
