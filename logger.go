@@ -115,6 +115,10 @@ func (l Logger) IsEnabled(lvl Level) bool {
 	return lvl >= l.level
 }
 
+func (l Logger) isDisabled(lvl Level) bool {
+	return lvl < l.level
+}
+
 // AddDepth is the same as WithDepth(depth), but it will grow it with depth,
 // not reset it to depth.
 func (l Logger) AddDepth(depth int) Logger {

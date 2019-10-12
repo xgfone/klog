@@ -222,16 +222,20 @@ func TestLoggerEf(t *testing.T) {
 	}
 }
 
-func ExampleLogger_IsEnabled() {
-	logger := New().WithLevel(LvlInfo)
+func TestLogger_IsEnabled(t *testing.T) {
+	buf := NewBuilder(128)
+	logger := New(StreamWriter(buf)).WithLevel(LvlInfo)
 
 	if logger.IsEnabled(LvlDebug) {
-		fmt.Println("debug")
+		logger.Debugf("debug")
 	}
 	if logger.IsEnabled(LvlInfo) {
-		fmt.Println("info")
+		logger.Infof("info")
 	}
 
-	// Output:
-	// info
+	if output := buf.String(); strings.Contains(output, "debug") {
+		t.Error(output)
+	} else if !strings.Contains(output, "info") {
+		t.Error(output)
+	}
 }

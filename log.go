@@ -62,7 +62,7 @@ func newLog(logger Logger, level Level, depth int) Log {
 			ok = false
 		}
 	}
-	if ok && !logger.IsEnabled(level) {
+	if ok && logger.isDisabled(level) {
 		ok = false
 	}
 
@@ -208,7 +208,7 @@ func emitLog(logger Logger, level Level, depth int, msg string, fields []Field) 
 /////////////////////////////////////////////////////////////////////////////
 
 func (l LLog) emit(level Level, format string, args ...interface{}) {
-	if !l.logger.IsEnabled(level) {
+	if l.logger.isDisabled(level) {
 		return
 	}
 
