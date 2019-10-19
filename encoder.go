@@ -38,6 +38,8 @@ func NothingEncoder() Encoder { return func(buf *Builder, r Record) {} }
 //
 // If quote is true and the string value contains the space, it will be surrounded
 // by a pair of the double quotation marks.
+//
+// Notice: it will ignore the empty msg.
 func TextEncoder(quote ...bool) Encoder {
 	var _quote bool
 	if len(quote) > 0 && quote[0] {
@@ -96,8 +98,11 @@ func TextEncoder(quote ...bool) Encoder {
 		}
 
 		// Message
-		buf.WriteString(" msg=")
-		appendString(buf, r.Msg)
+		if r.Msg != "" {
+			buf.WriteString(" msg=")
+			appendString(buf, r.Msg)
+		}
+
 		buf.WriteByte('\n')
 	}
 }
@@ -107,6 +112,8 @@ func TextEncoder(quote ...bool) Encoder {
 // Notice: the key name of the level is "lvl" and that of the time is "t"
 // with time.RFC3339Nano, and that of the message is "msg".
 // If the logger name exists, it will encode it and the key name is "logger".
+//
+// Notice: it will ignore the empty msg.
 func JSONEncoder() Encoder {
 	return func(buf *Builder, r Record) {
 		// Start and Time
@@ -138,8 +145,10 @@ func JSONEncoder() Encoder {
 		}
 
 		// Message
-		buf.WriteString(`,"msg":`)
-		buf.AppendJSONString(r.Msg)
+		if r.Msg != "" {
+			buf.WriteString(`,"msg":`)
+			buf.AppendJSONString(r.Msg)
+		}
 
 		// End
 		buf.WriteString("}\n")
@@ -148,12 +157,17 @@ func JSONEncoder() Encoder {
 
 // StdJSONEncoder is equal to JSONEncoder, which uses json.Marshal() to encode
 // it, but the performance is a little bad.
+//
+// Notice: it will ignore the empty msg.
 func StdJSONEncoder() Encoder {
 	return func(buf *Builder, r Record) {
 		maps := make(map[string]interface{}, len(r.Fields)+8)
 		maps["t"] = r.Time.Format(time.RFC3339Nano)
 		maps["lvl"] = r.Level.String()
-		maps["msg"] = r.Msg
+
+		if r.Msg != "" {
+			maps["msg"] = r.Msg
+		}
 
 		if r.Name != "" {
 			maps["logger"] = r.Name

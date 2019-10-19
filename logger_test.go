@@ -239,3 +239,24 @@ func TestLogger_IsEnabled(t *testing.T) {
 		t.Error(output)
 	}
 }
+
+func TestEmptyMsg(t *testing.T) {
+	buf := NewBuilder(256)
+	log := Std.WithWriter(StreamWriter(buf))
+
+	// Test TextEncoder
+	log = log.WithEncoder(TextEncoder())
+	log.Errorf("")
+
+	// Test JSONEncoder
+	log = log.WithEncoder(JSONEncoder())
+	log.Errorf("")
+
+	// Test StdJSONEncoder
+	log = log.WithEncoder(StdJSONEncoder())
+	log.Errorf("")
+
+	if s := buf.String(); strings.Contains(s, "msg") || !strings.Contains(s, "ERROR") {
+		t.Error(s)
+	}
+}
