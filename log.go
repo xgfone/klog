@@ -16,6 +16,7 @@ package klog
 
 import (
 	"fmt"
+	"io"
 	"sync"
 	"time"
 )
@@ -236,10 +237,18 @@ type LLog struct {
 	depth  int
 }
 
+var _ KvLogger = LLog{}
+var _ FmtLoggerf = LLog{}
+
 func newLLog(logger Logger, depth int, fields ...Field) LLog {
 	_fields := append(fieldPool.Get().([]Field), logger.fields...)
 	_fields = append(_fields, fields...)
 	return LLog{logger: logger, depth: depth, fields: _fields}
+}
+
+// Writer returns the underlying io.Writer.
+func (l LLog) Writer() io.Writer {
+	return FromWriter(l.logger.writer)
 }
 
 // IsEnabled reports whether the log with the lvl level can be logged.
