@@ -74,6 +74,17 @@ func newLog(logger Logger, level Level, depth int) Log {
 	return Log{fields: fields, logger: logger, level: level, depth: depth, ok: ok}
 }
 
+// Clone clones itself to a new.
+func (l Log) Clone() Log {
+	return Log{
+		ok:     l.ok,
+		depth:  l.depth,
+		level:  l.level,
+		logger: l.logger,
+		fields: append(fieldPool.Get().([]Field), l.fields...),
+	}
+}
+
 // AddDepth adds the depth.
 func (l Log) AddDepth(depth int) Log {
 	l.depth += depth
@@ -244,6 +255,15 @@ func newLLog(logger Logger, depth int, fields ...Field) LLog {
 	_fields := append(fieldPool.Get().([]Field), logger.fields...)
 	_fields = append(_fields, fields...)
 	return LLog{logger: logger, depth: depth, fields: _fields}
+}
+
+// Clone clones itself to a new.
+func (l LLog) Clone() LLog {
+	return LLog{
+		depth:  l.depth,
+		logger: l.logger,
+		fields: append(fieldPool.Get().([]Field), l.fields...),
+	}
 }
 
 // Writer returns the underlying io.Writer.
