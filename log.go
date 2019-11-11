@@ -241,7 +241,8 @@ func (l LLog) emit(level Level, format string, args ...interface{}) {
 	emitLog(l.logger, level, l.depth, format, l.fields)
 }
 
-// LLog is another interface of the key-value log with the level.
+// LLog is another interface of the key-value log with the level,
+// which has implemented the KvLogger and FmtLoggerf interface.
 type LLog struct {
 	fields []Field
 	logger Logger
