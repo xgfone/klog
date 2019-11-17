@@ -16,8 +16,6 @@ package klog
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/go-stack/stack"
 )
@@ -54,69 +52,5 @@ func CallerStack(fullPath ...bool) Valuer {
 			return fmt.Sprintf(format, s)
 		}
 		return ""
-	}
-}
-
-// LineNo returns the line number of the caller as string.
-func LineNo() Valuer {
-	return func(r Record) interface{} {
-		caller := fmt.Sprintf("%v", stack.Caller(r.Depth+1))
-		if index := strings.IndexByte(caller, ':'); index > -1 {
-			return caller[index+1:]
-		}
-		return ""
-	}
-}
-
-// LineNoAsInt returns the line number of the caller.
-//
-// Return 0 if the line is missing.
-func LineNoAsInt() Valuer {
-	return func(r Record) interface{} {
-		caller := fmt.Sprintf("%v", stack.Caller(r.Depth+1))
-		if index := strings.IndexByte(caller, ':'); index > -1 {
-			lineno, _ := strconv.ParseInt(caller[index+1:], 10, 32)
-			return int(lineno)
-		}
-		return 0
-	}
-}
-
-// FuncName returns the name of the function where the caller is in.
-func FuncName() Valuer {
-	return func(r Record) interface{} {
-		return fmt.Sprintf("%n", stack.Caller(r.Depth+1))
-	}
-}
-
-// FuncFullName returns the full name of the function where the caller is in.
-func FuncFullName() Valuer {
-	return func(r Record) interface{} {
-		return fmt.Sprintf("%+n", stack.Caller(r.Depth+1))
-	}
-}
-
-// FileName returns the short name of the file where the caller is in.
-func FileName() Valuer {
-	return func(r Record) interface{} {
-		return fmt.Sprintf("%s", stack.Caller(r.Depth+1))
-	}
-}
-
-// FileLongName returns the long name of the file where the caller is in.
-func FileLongName() Valuer {
-	return func(r Record) interface{} {
-		return fmt.Sprintf("%+s", stack.Caller(r.Depth+1))
-	}
-}
-
-// Package returns the name of the package where the caller is in.
-func Package() Valuer {
-	return func(r Record) interface{} {
-		path := fmt.Sprintf("%+n", stack.Caller(r.Depth+1))
-		if index := strings.LastIndexByte(path, '.'); index > -1 {
-			return path[:index]
-		}
-		return path
 	}
 }

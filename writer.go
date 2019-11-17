@@ -18,44 +18,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net"
 	"os"
 	"path/filepath"
 	"sync"
 )
 
-var maxLevel = Level(math.MaxInt32)
 var fileFlag = os.O_CREATE | os.O_APPEND | os.O_WRONLY
-
-// Errors is used to wrap more than one error.
-type Errors []error
-
-func (es Errors) Error() string {
-	buf := getBuilder()
-	es.WriteTo(buf)
-	s := buf.String()
-	putBuilder(buf)
-	return s
-}
-
-// WriteTo implements io.WriteTo.
-func (es Errors) WriteTo(w io.Writer) (n int64, err error) {
-	for i, e := range es {
-		if e != nil {
-			m, _err := fmt.Fprintf(w, "[%d]%s; ", i, e.Error())
-			if _err != nil {
-				return n + int64(m), _err
-			}
-			n += int64(m)
-		}
-	}
-	return
-}
 
 // Writer is the interface to write the log to the underlying storage.
 type Writer interface {
-	io.Closer
 	Write(level Level, data []byte) (n int, err error)
 }
 
@@ -65,211 +37,171 @@ type ioWriter struct {
 
 // Writer implements io.Writer.
 func (w ioWriter) Write(p []byte) (int, error) {
-	return w.w.Write(maxLevel, p)
+	return w.w.Write(LvlMax, p)
 }
 
 // Close implements io.Closer.
 func (w ioWriter) Close() error {
-	return w.Close()
-}
-
-// FromWriter converts Writer to io.WriteCloser.
-func FromWriter(w Writer) io.WriteCloser {
-	return ioWriter{w: w}
-}
-
-type writerFunc struct {
-	close func() error
-	write func(Level, []byte) (int, error)
-}
-
-// Write implements Writer#Write().
-func (w writerFunc) Write(level Level, data []byte) (int, error) {
-	return w.write(level, data)
-}
-
-// Close implements io.Closer.
-func (w writerFunc) Close() error {
-	if w.close != nil {
-		return w.close()
+	if c, ok := w.w.(io.Closer); ok {
+		return c.Close()
 	}
 	return nil
 }
 
-// WriterFunc adapts a function with w to Writer.
-//
-// If giving the close function, it will be called when closing the writer.
-// Or do nothing.
-func WriterFunc(w func(Level, []byte) (int, error), close ...func() error) Writer {
-	var closer func() error
-	if len(close) > 0 {
-		closer = close[0]
-	}
-	return writerFunc{close: closer, write: w}
+// ToIOWriter converts Writer to io.WriteCloser.
+func ToIOWriter(w Writer) io.WriteCloser {
+	return ioWriter{w: w}
 }
 
+type writerFunc func(Level, []byte) (int, error)
+
+// Write implements Writer#Write().
+func (w writerFunc) Write(level Level, data []byte) (int, error) {
+	return w(level, data)
+}
+
+// WriterFunc adapts the function to Writer.
+func WriterFunc(f func(Level, []byte) (int, error)) Writer {
+	return writerFunc(f)
+}
+
+// WriteCloser is the union of Writer and io.Closer.
+type WriteCloser interface {
+	Writer
+	io.Closer
+}
+
+type writeCloserFunc struct {
+	write func(Level, []byte) (int, error)
+	close func() error
+}
+
+// Write implements Writer#Write().
+func (w writeCloserFunc) Write(level Level, data []byte) (int, error) {
+	return w.write(level, data)
+}
+
+// Close implements io.Closer.
+func (w writeCloserFunc) Close() error {
+	if w.close == nil {
+		return nil
+	}
+	return w.close()
+}
+
+// WriteCloserFunc adapts the write and close function to WriteCloser.
+//
+// close may be nil, which will do nothing when calling the Close method.
+func WriteCloserFunc(write func(Level, []byte) (int, error), close func() error) WriteCloser {
+	return writeCloserFunc{write, close}
+}
+
+// ToWriteCloser converts Writer to WriteCloser.
+func ToWriteCloser(w Writer) WriteCloser {
+	return writeCloserFunc{w.Write, getClose(w)}
+}
+
+func getClose(w Writer) func() error {
+	if c, ok := w.(io.Closer); ok {
+		return c.Close
+	}
+	return nil
+}
+
+func closeAllWriters(writers ...Writer) {
+	for _, w := range writers {
+		if c, ok := w.(io.Closer); ok {
+			c.Close()
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 // DiscardWriter discards all the data.
-func DiscardWriter() Writer {
-	return WriterFunc(func(Level, []byte) (int, error) { return 0, nil })
+func DiscardWriter() WriteCloser {
+	return WriteCloserFunc(func(Level, []byte) (int, error) { return 0, nil }, nil)
 }
 
 // LevelWriter filters the logs whose level is less than lvl.
-func LevelWriter(lvl Level, w Writer) Writer {
-	return WriterFunc(func(level Level, p []byte) (int, error) {
-		if level < lvl {
+func LevelWriter(lvl Level, w Writer) WriteCloser {
+	close := getClose(w)
+	return WriteCloserFunc(func(level Level, p []byte) (int, error) {
+		if level.Priority() < lvl.Priority() {
 			return 0, nil
 		}
 		return w.Write(level, p)
-	}, w.Close)
+	}, close)
 }
 
 // SafeWriter is guaranteed that only a single writing operation can proceed
 // at a time.
 //
-// The returned Writer supports io.Closer, which will be forwarded to w.Close().
-//
 // It's necessary for thread-safe concurrent writes.
-func SafeWriter(w Writer) Writer {
+func SafeWriter(w Writer) WriteCloser {
 	var mu sync.Mutex
-	return WriterFunc(func(level Level, p []byte) (int, error) {
+	close := getClose(w)
+	return WriteCloserFunc(func(level Level, p []byte) (int, error) {
 		mu.Lock()
 		defer mu.Unlock()
 		return w.Write(level, p)
-	}, w.Close)
+	}, close)
 }
 
 // StreamWriter converts io.Writer to Writer.
-//
-// If w has implemented io.Closer, the returned writer will forward the Close
-// calling to it. Or do nothing.
-func StreamWriter(w io.Writer) Writer {
-	return WriterFunc(func(level Level, p []byte) (int, error) {
+func StreamWriter(w io.Writer) WriteCloser {
+	var close func() error
+	if c, ok := w.(io.Closer); ok {
+		close = c.Close
+	}
+
+	return WriteCloserFunc(func(level Level, p []byte) (int, error) {
 		return w.Write(p)
-	}, func() error {
-		if closer, ok := w.(io.Closer); ok {
-			return closer.Close()
-		}
-		return nil
-	})
+	}, close)
 }
 
 // NetWriter opens a socket to the given address and writes the log
 // over the connection.
 //
 // Notice: it will be wrapped by SafeWriter, so it's thread-safe.
-func NetWriter(network, addr string) (Writer, error) {
+func NetWriter(network, addr string) (WriteCloser, error) {
 	conn, err := net.Dial(network, addr)
 	if err != nil {
 		return nil, err
 	}
-	return SafeWriter(StreamWriter(conn)), nil
+	return ToWriteCloser(SafeWriter(StreamWriter(conn))), nil
 }
 
-// ReopenWriter returns a writer that can be closed then re-opened,
-// which is used for logrotate typically.
-//
-// Notice: It's thread-safe.
-func ReopenWriter(factory func() (w io.WriteCloser, reopen <-chan bool, err error)) Writer {
-	var w io.WriteCloser
-	var err error
-	var reopen <-chan bool
-	var lock sync.Mutex
-
-	return WriterFunc(func(level Level, p []byte) (int, error) {
-		lock.Lock()
-		defer lock.Unlock()
-
-		if reopen == nil {
-			if w, reopen, err = factory(); err != nil {
-				w = nil
-				reopen = nil
-				return 0, err
-			}
-		} else if w == nil {
-			return 0, errors.New("the writer has been closed")
-		}
-
-		select {
-		case <-reopen:
-			w.Close()
-			if w, reopen, err = factory(); err != nil {
-				w = nil
-				reopen = nil
-				return 0, err
-			}
-		default:
-		}
-		return w.Write(p)
-	}, func() (err error) {
-		lock.Lock()
-		defer lock.Unlock()
-		if w != nil {
-			err = w.Close()
-			w = nil
-		}
-		return
-	})
-}
-
-// MultiWriter writes one data to more than one destination.
-func MultiWriter(outs ...Writer) Writer {
-	_len := len(outs)
-	return WriterFunc(func(level Level, p []byte) (n int, err error) {
-		var errs Errors
-		for i, out := range outs {
-			if m, e := out.Write(level, p); e != nil {
-				n += m
-				if errs == nil {
-					errs = make(Errors, _len)
-				}
-				errs[i] = e
-			} else {
-				n += m
-			}
-		}
-		return n, errs
-	}, func() error {
-		var errs Errors
-		for i, w := range outs {
-			if e := w.Close(); e != nil {
-				if errs == nil {
-					errs = make(Errors, _len)
-				}
-				errs[i] = e
-			}
-		}
-		return errs
-	})
-}
-
-// FailoverWriter writes all log records to the first handler specified,
-// but will failover and write to the second handler if the first handler
-// has failed, and so on for all handlers specified.
+// FailoverWriter writes all log records to the first writer specified,
+// but will failover and write to the second writer if the first writer
+// has failed, and so on for all writers specified.
 //
 // For example, you might want to log to a network socket, but failover to
 // writing to a file if the network fails, and then to standard out
 // if the file write fails.
-func FailoverWriter(outs ...Writer) Writer {
-	_len := len(outs)
-	return WriterFunc(func(level Level, p []byte) (n int, err error) {
-		for _, out := range outs {
-			if n, err = out.Write(level, p); err == nil {
+func FailoverWriter(writers ...Writer) WriteCloser {
+	return WriteCloserFunc(func(level Level, p []byte) (n int, err error) {
+		for _, w := range writers {
+			if n, err = w.Write(level, p); err == nil {
 				return
 			}
 		}
 		return
 	}, func() error {
-		var errs Errors
-		for i, w := range outs {
-			if e := w.Close(); e != nil {
-				if errs == nil {
-					errs = make(Errors, _len)
-				}
-				errs[i] = e
-			}
-		}
-		return errs
+		closeAllWriters(writers...)
+		return nil
 	})
+}
+
+// SplitWriter returns a level-separated writer, which will write the log record
+// into the separated writer.
+func SplitWriter(getWriter func(Level) Writer) WriteCloser {
+	return WriteCloserFunc(func(level Level, p []byte) (n int, err error) {
+		if w := getWriter(level); w != nil {
+			n, err = w.Write(level, p)
+		}
+		return
+	}, nil)
 }
 
 // FileWriter returns a writer based the file, which uses NewSizedRotatingFile
@@ -284,9 +216,9 @@ func FailoverWriter(outs ...Writer) Writer {
 //
 // Notice: if the directory in where filename is does not exist, it will be
 // created automatically.
-func FileWriter(filename, filesize string, filenum int) (Writer, error) {
+func FileWriter(filename, filesize string, filenum int) (WriteCloser, error) {
 	if filename == "" {
-		return SafeWriter(StreamWriter(os.Stdout)), nil
+		return ToWriteCloser(SafeWriter(StreamWriter(os.Stdout))), nil
 	}
 
 	if filesize == "" {
@@ -304,8 +236,7 @@ func FileWriter(filename, filesize string, filenum int) (Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	AppendCleaner(func() { file.Close() })
-	return StreamWriter(file), nil
+	return ToWriteCloser(StreamWriter(file)), nil
 }
 
 // NewSizedRotatingFile returns a new SizedRotatingFile.
@@ -334,7 +265,7 @@ func NewSizedRotatingFile(filename string, size, count int,
 	return &w, nil
 }
 
-// SizedRotatingFile is a file rotating logging handler based on the size.
+// SizedRotatingFile is a file rotating logging writer based on the size.
 type SizedRotatingFile struct {
 	lock sync.Mutex
 	file *os.File

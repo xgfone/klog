@@ -15,31 +15,33 @@
 package klog
 
 import (
-	"os"
+	"fmt"
 	"strconv"
 	"sync"
 )
 
-var cleaners []func()
-var cleanerOnce sync.Once
+var (
+	// FieldSize is the default capacity of []Field to be created in the pool.
+	FieldSize = 8
 
-func callCleaner() {
-	for _, clean := range cleaners {
-		if clean != nil {
-			clean()
-		}
+	// BuilderSize is the default capacity of Builder to be created in the pool.
+	BuilderSize = 256
+)
+
+var (
+	fieldPool   = sync.Pool{New: func() interface{} { return make([]Field, 0, FieldSize) }}
+	builderPool = sync.Pool{New: func() interface{} { return NewBuilder(BuilderSize) }}
+)
+
+func getBuilder() *Builder  { return builderPool.Get().(*Builder) }
+func putBuilder(b *Builder) { b.Reset(); builderPool.Put(b) }
+
+// Sprintf is equal to fmt.Sprintf(msg, args...).
+func Sprintf(msg string, args ...interface{}) string {
+	if len(args) == 0 {
+		return msg
 	}
-}
-
-func exit(code int) {
-	cleanerOnce.Do(callCleaner)
-	os.Exit(code)
-}
-
-// AppendCleaner appends the clean functions, which will be called when emitting
-// the FATAL log.
-func AppendCleaner(clean ...func()) {
-	cleaners = append(cleaners, clean...)
+	return fmt.Sprintf(msg, args...)
 }
 
 // ParseSize parses the size string. The size maybe have a unit suffix,

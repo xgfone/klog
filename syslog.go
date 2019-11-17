@@ -27,15 +27,15 @@ type syslogWriter struct {
 
 func (s syslogWriter) Write(level Level, p []byte) (n int, err error) {
 	v := string(bytes.TrimSpace(p))
-	if level >= LvlFatal {
+	if prio := level.Priority(); prio >= LvlEmerg.Priority() {
 		err = s.w.Emerg(v)
-	} else if level >= LvlPanic {
+	} else if prio >= LvlCrit.Priority() {
 		err = s.w.Crit(v)
-	} else if level >= LvlError {
+	} else if prio >= LvlError.Priority() {
 		err = s.w.Err(v)
-	} else if level >= LvlWarn {
+	} else if prio >= LvlWarn.Priority() {
 		err = s.w.Warning(v)
-	} else if level >= LvlInfo {
+	} else if prio >= LvlInfo.Priority() {
 		err = s.w.Info(v)
 	} else {
 		err = s.w.Debug(v)
@@ -54,7 +54,7 @@ func (s syslogWriter) Close() error {
 
 // SyslogWriter opens a connection to the system syslog daemon
 // by calling syslog.New and writes all logs to it.
-func SyslogWriter(priority syslog.Priority, tag string) (Writer, error) {
+func SyslogWriter(priority syslog.Priority, tag string) (WriteCloser, error) {
 	w, err := syslog.New(priority, tag)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func SyslogWriter(priority syslog.Priority, tag string) (Writer, error) {
 
 // SyslogNetWriter opens a connection to a log daemon over the network
 // and writes all logs to it.
-func SyslogNetWriter(net, addr string, priority syslog.Priority, tag string) (Writer, error) {
+func SyslogNetWriter(net, addr string, priority syslog.Priority, tag string) (WriteCloser, error) {
 	w, err := syslog.Dial(net, addr, priority, tag)
 	if err != nil {
 		return nil, err

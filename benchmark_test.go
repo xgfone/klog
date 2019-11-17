@@ -16,100 +16,86 @@ package klog
 
 import "testing"
 
-func BenchmarkKlogLNothingEncoder(b *testing.B) {
-	logger := New(DiscardWriter()).WithEncoder(NothingEncoder())
+func BenchmarkKlogNothingEncoder(b *testing.B) {
+	logger := New("").WithEncoder(NothingEncoder())
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().K("key", "vlaue").Msg("message")
+			logger.Log(LvlInfo, "message")
 		}
 	})
 }
 
-func BenchmarkKlogLTextEncoder(b *testing.B) {
-	logger := New(DiscardWriter())
+func BenchmarkKlogTextEncoder(b *testing.B) {
+	logger := New("").WithEncoder(TextEncoder(DiscardWriter()))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().K("key", "vlaue").Msg("message")
+			logger.Log(LvlInfo, "message")
 		}
 	})
 }
 
-func BenchmarkKlogLJSONEncoder(b *testing.B) {
-	logger := New(DiscardWriter()).WithEncoder(JSONEncoder())
+func BenchmarkKlogJSONEncoder(b *testing.B) {
+	logger := New("").WithEncoder(JSONEncoder(DiscardWriter()))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().K("key", "vlaue").Msg("message")
+			logger.Log(LvlInfo, "message")
 		}
 	})
 }
 
-func BenchmarkKlogLStdJSONEncoder(b *testing.B) {
-	logger := New(DiscardWriter()).WithEncoder(StdJSONEncoder())
+func BenchmarkKlogStdJSONEncoder(b *testing.B) {
+	logger := New("").WithEncoder(StdJSONEncoder(DiscardWriter()))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().K("key", "vlaue").Msg("message")
+			logger.Log(LvlInfo, "message")
 		}
 	})
 }
 
-////////
-
-func BenchmarkKlogFNothingEncoder(b *testing.B) {
-	logger := New(DiscardWriter()).WithEncoder(NothingEncoder())
+func BenchmarkKlogContextFieldsTextEncoder(b *testing.B) {
+	logger := New("").WithEncoder(TextEncoder(DiscardWriter())).WithCtx(F("key", "value"))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.K("key", "vlaue").Infof("message")
+			logger.Log(LvlInfo, "message")
 		}
 	})
 }
 
-func BenchmarkKlogFTextEncoder(b *testing.B) {
-	logger := New(DiscardWriter())
+func BenchmarkKlogContextFieldsJSONEncoder(b *testing.B) {
+	logger := New("").WithEncoder(JSONEncoder(DiscardWriter())).WithCtx(F("key", "value"))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.K("key", "vlaue").Infof("message")
+			logger.Log(LvlInfo, "message")
 		}
 	})
 }
 
-func BenchmarkKlogFJSONEncoder(b *testing.B) {
-	logger := New(DiscardWriter()).WithEncoder(JSONEncoder())
+func BenchmarkKlogContextFieldsStdJSONEncoder(b *testing.B) {
+	logger := New("").WithEncoder(StdJSONEncoder(DiscardWriter())).WithCtx(F("key", "value"))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.K("key", "vlaue").Infof("message")
-		}
-	})
-}
-
-func BenchmarkKlogFStdJSONEncoder(b *testing.B) {
-	logger := New(DiscardWriter()).WithEncoder(StdJSONEncoder())
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.K("key", "vlaue").Infof("message")
+			logger.Log(LvlInfo, "message")
 		}
 	})
 }

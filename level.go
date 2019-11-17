@@ -17,71 +17,70 @@ package klog
 import (
 	"fmt"
 	"io"
+	"math"
 	"strings"
 )
 
 // Predefine some levels.
-//
-// You can define yourself level.
-//
-// For LvlFatal or higher, it will emit the log and call the clean functions
-// firstly, then the program will exit by calling `os.Exit(1)`.
-//
-// For LvlPanic or higher, it will emit the log firstly, then panic with Record,
-// but the field Fields is reset to nil.
-const (
-	LvlTrace Level = iota * 100
-	LvlDebug
-	LvlInfo
-	LvlWarn
-	LvlError
-	LvlPanic
-	LvlFatal
+var (
+	LvlTrace = NewLevel("TRACE", 0)
+	LvlDebug = NewLevel("DEBUG", 100)
+	LvlInfo  = NewLevel("INFO", 200)
+	LvlWarn  = NewLevel("WARN", 300)
+	LvlError = NewLevel("ERROR", 400)
+	LvlCrit  = NewLevel("CRIT", 500)
+	LvlEmerg = NewLevel("EMERG", 600)
+	LvlMax   = NewLevel("MAX", math.MaxInt32)
 )
 
-// Levels is the pre-defined level names, but you can reset and override them.
-var Levels = map[Level]string{
-	LvlTrace: "TRACE",
-	LvlDebug: "DEBUG",
-	LvlInfo:  "INFO",
-	LvlWarn:  "WARN",
-	LvlError: "ERROR",
-	LvlPanic: "PANIC",
-	LvlFatal: "FATAL",
+// Level represents the logger level.
+type Level interface {
+	// Priority returns the priority of the level.
+	// The bigger the level, the higher the priority.
+	Priority() int
+
+	// String returns the name of the level.
+	String() string
 }
 
-// Level represents a level. The bigger the value, the higher the level.
-type Level int32
-
-func (l Level) String() string {
-	return Levels[l]
+func levelIsLess(lvl1, lvl2 Level) bool {
+	return lvl1.Priority() < lvl2.Priority()
 }
 
-// WriteTo implements io.WriterTo.
-func (l Level) WriteTo(out io.Writer) (int64, error) {
-	n, err := io.WriteString(out, l.String())
+// NewLevel returns a new level, which has also implemented the interface
+// io.WriterTo.
+func NewLevel(name string, priority int) Level {
+	return namedLevel{name: name, prio: priority}
+}
+
+type namedLevel struct {
+	name string
+	prio int
+}
+
+func (l namedLevel) String() string {
+	return l.name
+}
+
+func (l namedLevel) Priority() int {
+	return l.prio
+}
+
+func (l namedLevel) WriteTo(w io.Writer) (int64, error) {
+	n, err := io.WriteString(w, l.name)
 	return int64(n), err
 }
 
-// MarshalJSON implements json.Marshaler.
-func (l Level) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + l.String() + `"`), nil
-}
+// Levels is a set of Level, which is used to get the level by the name.
+var Levels map[string]Level
 
 // NameToLevel returns the Level by the name, which is case Insensitive.
 //
 // If not panic, it will return `LvlInfo` instead if no level named `name`.
 func NameToLevel(name string, defaultPanic ...bool) Level {
-	for k, v := range Levels {
-		if v == name {
-			return k
-		}
-	}
-
-	uname := strings.ToUpper(name)
-	for k, v := range Levels {
-		if v == uname {
-			return k
+	for n, lvl := range Levels {
+		if strings.ToUpper(n) == strings.ToUpper(name) {
+			return lvl
 		}
 	}
 

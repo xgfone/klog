@@ -46,8 +46,8 @@ func TestBuilder_TruncateAfter(t *testing.T) {
 func TestBuilder_WriteRune(t *testing.T) {
 	b := NewBuilderString("abc")
 	b.WriteRune(rune('d'))
-	b.WriteRune(rune('中'))
-	if b.String() != "abcd中" {
+	b.WriteRune(rune('e'))
+	if b.String() != "abcde" {
 		t.Error(b.String())
 	}
 }
@@ -129,7 +129,7 @@ func TestBuilder_AppendAny(t *testing.T) {
 		t.Error(ss[1])
 	} else if ss[2] != "[4 x 5 y]" {
 		t.Error(ss[2])
-	} else if ss[3] != "map[k1:v1 k2:789]" && ss[3] != "map[k2:789 k1:v1]"{
+	} else if ss[3] != "map[k1:v1 k2:789]" && ss[3] != "map[k2:789 k1:v1]" {
 		t.Error(ss[3])
 	}
 }

@@ -14,16 +14,14 @@
 
 package klog
 
-import "fmt"
+func ExampleFixRecordEncoder() {
+	encoder := FixRecordEncoder(NothingEncoder(), func(r Record) Record {
+		r.Depth += 2
+		return r
+	})
 
-func ExampleParseSize() {
-	m10, _ := ParseSize("100M")
-	g10, _ := ParseSize("10g")
-
-	fmt.Println(m10)
-	fmt.Println(g10)
+	// Encode the Record.
+	encoder.Encode(Record{})
 
 	// Output:
-	// 104857600
-	// 10000000000
 }

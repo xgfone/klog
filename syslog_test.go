@@ -27,9 +27,8 @@ func TestSyslogWriter(t *testing.T) {
 		t.Error(err)
 	} else {
 		defer w.Close()
-		New(w).Info().Msgf("test %s %s", "syslog", "writer")
+		logger := New("")
+		logger.SetEncoder(TextEncoder(w))
+		logger.Log(LvlInfo, "test", F("writer", "syslog"))
 	}
-
-	// Output:
-	//
 }

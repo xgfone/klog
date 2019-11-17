@@ -14,142 +14,77 @@
 
 package klog
 
-// Std is the default global Logger.
-var Std = New()
+var originLogger, defaultLogger ExtLogger
 
-// DefaultManager is the default global manager of the logger.
-var DefaultManager = NewManager()
+func init() { SetDefaultLogger(New("")) }
 
-// GetLogger is equal to DefaultManager.GetLogger(name).
-func GetLogger(name string) *Logger {
-	return DefaultManager.GetLogger(name)
-}
+// GetDefaultLogger returns the default logger.
+func GetDefaultLogger() ExtLogger { return originLogger }
 
-// IsEnabled is equal to Std.IsEnabled(lvl).
-func IsEnabled(lvl Level) bool {
-	return Std.IsEnabled(lvl)
-}
+// SetDefaultLogger sets the default logger to l.
+func SetDefaultLogger(l ExtLogger) { originLogger = l; defaultLogger = l.WithDepth(1) }
 
-////////////////////////////////////////////////////////////////////////////
-/// Setter Interface
+// GetEncoder returns the encoder of the default logger.
+func GetEncoder() Encoder { return defaultLogger.Encoder() }
 
-// AddKv is equal to Std.AddKv(key, value).
-func AddKv(key string, value interface{}) *Logger {
-	return Std.AddKv(key, value)
-}
+// SetEncoder resets the encoder of the default logger, which is TextEncoder by default.
+func SetEncoder(enc Encoder) { defaultLogger.SetEncoder(enc) }
 
-// AddField is equal to Std.AddField(fields...).
-func AddField(fields ...Field) *Logger {
-	return Std.AddField(fields...)
-}
+// SetLevel resets the level of the default logger, which is LvlDebug by default.
+func SetLevel(lvl Level) { defaultLogger.SetLevel(lvl) }
 
-// AddHook is equal to Std.AddHook(hooks...).
-func AddHook(hooks ...Hook) *Logger {
-	return Std.AddHook(hooks...)
-}
+// WithCtx returns a new ExtLogger based on the default logger with the fields.
+func WithCtx(fields ...Field) ExtLogger { return originLogger.WithCtx(fields...) }
 
-// AddDepth is equal to Std.AddDepthSelf(depth).
-func AddDepth(depth int) *Logger {
-	return Std.AddDepthSelf(depth)
-}
+// WithName returns a new ExtLogger based on the default logger with the name.
+func WithName(name string) ExtLogger { return originLogger.WithName(name) }
 
-// SetDepth is equal to Std.SetDepth(depth).
-func SetDepth(depth int) *Logger {
-	return Std.SetDepth(depth)
-}
+// WithLevel returns a new ExtLogger based on the default logger with the level.
+func WithLevel(level Level) ExtLogger { return originLogger.WithLevel(level) }
 
-// SetEncoder is equal to Std.SetEncoder(encoder).
-func SetEncoder(encoder Encoder) *Logger {
-	return Std.SetEncoder(encoder)
-}
+// WithEncoder returns a new ExtLogger based on the default logger with the encoder.
+func WithEncoder(enc Encoder) ExtLogger { return originLogger.WithEncoder(enc) }
 
-// SetWriter is equal to Std.SetWriter(w).
-func SetWriter(w Writer) *Logger {
-	return Std.SetWriter(w)
-}
+// WithDepth returns a new ExtLogger based on the default logger with the depth.
+func WithDepth(depth int) ExtLogger { return originLogger.WithDepth(depth) }
 
-// SetLevel is equal to Std.SetLevel(level).
-func SetLevel(level Level) *Logger {
-	return Std.SetLevel(level)
-}
+// Log emits the log with the level by the default logger.
+func Log(level Level, msg string, fields ...Field) { defaultLogger.Log(level, msg, fields...) }
 
-// SetLevelString is equal to Std.SetLevelString(level).
-func SetLevelString(level string) *Logger {
-	return Std.SetLevelString(level)
-}
+// Trace is equal to Log(LvlTrace, msg, field...).
+func Trace(msg string, fields ...Field) { defaultLogger.Log(LvlTrace, msg, fields...) }
 
-// SetName is equal to Std.SetName(name).
-func SetName(name string) *Logger {
-	return Std.SetName(name)
-}
+// Debug is equal to Log(LvlDebug, msg, field...).
+func Debug(msg string, fields ...Field) { defaultLogger.Log(LvlDebug, msg, fields...) }
 
-////////////////////////////////////////////////////////////////////////////
-/// For LLog interface
+// Info is equal to Log(LvlInfo, msg, field...).
+func Info(msg string, fields ...Field) { defaultLogger.Log(LvlInfo, msg, fields...) }
 
-// E is equal to Std.F(NewErrField(err)).
-func E(err error) LLog { return Std.F(NewErrField(err)) }
+// Warn is equal to Log(LvlWarn, msg, field...).
+func Warn(msg string, fields ...Field) { defaultLogger.Log(LvlWarn, msg, fields...) }
 
-// F is equal to Std.F(fields...).
-func F(fields ...Field) LLog { return Std.F(fields...) }
+// Error is equal to Log(LvlError, msg, field...).
+func Error(msg string, fields ...Field) { defaultLogger.Log(LvlError, msg, fields...) }
 
-// K is equal to Std.K(key, value).
-func K(key string, value interface{}) LLog { return Std.K(key, value) }
-
-// V is equal to Std.V(kvs...).
-func V(kvs ...KV) LLog { return Std.V(kvs...) }
-
-// Ef is equal to Std.Ef(err, format, args...).
+// Ef is equal to Kv("err", err).Log(LvlError, Sprintf(format, args...)).
 func Ef(err error, format string, args ...interface{}) {
-	Std.AddDepth(1).Ef(err, format, args...)
+	defaultLogger.Log(LvlError, Sprintf(format, args...), F("err", err))
 }
 
-// Lf is equal to `Std.Lf(level, msg, args...)` to emit a specified `level` log.
-func Lf(level Level, msg string, args ...interface{}) { Std.AddDepth(1).Lf(level, msg, args...) }
+// Tracef is equal to Log(LvlTrace, Sprintf(format, args...)).
+func Tracef(format string, args ...interface{}) { defaultLogger.Log(LvlTrace, Sprintf(format, args...)) }
 
-// Tracef equal to `Std.Tracef(level, msg, args...)` to emit a TRACE log.
-func Tracef(msg string, args ...interface{}) { Std.AddDepth(1).Tracef(msg, args...) }
+// Debugf is equal to Log(LvlDebug, Sprintf(format, args...)).
+func Debugf(format string, args ...interface{}) { defaultLogger.Log(LvlDebug, Sprintf(format, args...)) }
 
-// Debugf equal to `Std.Debugf(level, msg, args...)` to emit a DEBUG log.
-func Debugf(msg string, args ...interface{}) { Std.AddDepth(1).Debugf(msg, args...) }
+// Infof is equal to Log(LvlInfo, Sprintf(format, args...)).
+func Infof(format string, args ...interface{}) { defaultLogger.Log(LvlInfo, Sprintf(format, args...)) }
 
-// Infof equal to `Std.Infof(level, msg, args...)` to emit a INFO log.
-func Infof(msg string, args ...interface{}) { Std.AddDepth(1).Infof(msg, args...) }
+// Warnf is equal to Log(LvlWarn, Sprintf(format, args...)).
+func Warnf(format string, args ...interface{}) { defaultLogger.Log(LvlWarn, Sprintf(format, args...)) }
 
-// Warnf equal to `Std.Warnf(level, msg, args...)` to emit a WARN log.
-func Warnf(msg string, args ...interface{}) { Std.AddDepth(1).Warnf(msg, args...) }
+// Errorf is equal to Log(LvlError, Sprintf(format, args...)).
+func Errorf(format string, args ...interface{}) { defaultLogger.Log(LvlError, Sprintf(format, args...)) }
 
-// Errorf equal to `Std.Errorf(level, msg, args...)` to emit a ERROR log.
-func Errorf(msg string, args ...interface{}) { Std.AddDepth(1).Errorf(msg, args...) }
-
-// Panicf equal to `Std.Panicf(level, msg, args...)` to emit a PANIC log.
-func Panicf(msg string, args ...interface{}) { Std.AddDepth(1).Panicf(msg, args...) }
-
-// Fatalf equal to `Std.Fatalf(level, msg, args...)` to emit a FATAL log.
-func Fatalf(msg string, args ...interface{}) { Std.AddDepth(1).Fatalf(msg, args...) }
-
-////////////////////////////////////////////////////////////////////////////
-/// For Log interface
-
-// L is equal to `Std.L(level, fields...)` to emit a specified `level` log.
-func L(level Level, fields ...Field) Log { return Std.L(level, fields...) }
-
-// Trace is equal to `Std.Trace(fields...)` to emit a TRACE log.
-func Trace(fields ...Field) Log { return Std.Trace(fields...) }
-
-// Debug is equal to `Std.Debug(fields...)` to emit a DEBUG log.
-func Debug(fields ...Field) Log { return Std.Debug(fields...) }
-
-// Info is equal to `Std.Info(fields...)` to emit a INFO log.
-func Info(fields ...Field) Log { return Std.Info(fields...) }
-
-// Warn is equal to `Std.Warn(fields...)` to emit a WARN log.
-func Warn(fields ...Field) Log { return Std.Warn(fields...) }
-
-// Error is equal to `Std.Error(fields...)` to emit a ERROR log.
-func Error(fields ...Field) Log { return Std.Error(fields...) }
-
-// Panic is equal to `Std.Panic(fields...)` to emit a PANIC log.
-func Panic(fields ...Field) Log { return Std.Panic(fields...) }
-
-// Fatal is equal to `Std.Fatal(fields...)` to emit a FATAL log.
-func Fatal(fields ...Field) Log { return Std.Fatal(fields...) }
+// Printf is equal to Infof(format, args...).
+func Printf(format string, args ...interface{}) { defaultLogger.Log(LvlInfo, Sprintf(format, args...)) }
