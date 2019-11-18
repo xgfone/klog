@@ -182,23 +182,25 @@ macOS Mojave
 Go 1.13.4
 ```
 
-**Benchmark Pakcage:**
-|               Function              |    ops   |    ns/op   | bytes/opt |  allocs/op
-|-------------------------------------|----------|------------|-----------|-------------
-BenchmarkKlogNothingEncoder-4         | 30076050 |   43 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogTextEncoder-4            |  9153582 |  137 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogJSONEncoder-4            |  7640342 |  148 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogTextEncoder10CtxFields-4 |  2020828 |  606 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogJSONEncoder10CtxFields-4 |   960454 | 1250 ns/op |  0 B/op   | 0 allocs/op
+**Benchmark Package:**
+
+|               Function               |    ops   |    ns/op   | bytes/opt |  allocs/op
+|--------------------------------------|----------|------------|-----------|-------------
+|BenchmarkKlogNothingEncoder-4         | 30076050 |   43 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder-4            |  9153582 |  137 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder-4            |  7640342 |  148 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder10CtxFields-4 |  2020828 |  606 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder10CtxFields-4 |   960454 | 1250 ns/op |  0 B/op   | 0 allocs/op
 
 **Benchmark Function:**
-|               Function              |    ops   |   ns/op    | bytes/opt |  allocs/op
-|-------------------------------------|----------|------------|-----------|-------------
-BenchmarkKlogNothingEncoder-4         | 89703194 | 13.3 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogTextEncoder-4            | 26699569 | 47.2 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogJSONEncoder-4            | 24100544 | 55.1 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogTextEncoder10CtxFields-4 |  9012544 |  129 ns/op |  0 B/op   | 0 allocs/op
-BenchmarkKlogJSONEncoder10CtxFields-4 |  3254241 |  364 ns/op |  0 B/op   | 0 allocs/op
+
+|               Function               |    ops   |   ns/op    | bytes/opt |  allocs/op
+|--------------------------------------|----------|------------|-----------|-------------
+|BenchmarkKlogNothingEncoder-4         | 89703194 | 13.3 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder-4            | 26699569 | 47.2 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder-4            | 24100544 | 55.1 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder10CtxFields-4 |  9012544 |  129 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder10CtxFields-4 |  3254241 |  364 ns/op |  0 B/op   | 0 allocs/op
 
 ### Test 2
 
@@ -210,7 +212,8 @@ Windows 10
 Go 1.13.4
 ```
 
-**Benchmark Pakcage:**
+**Benchmark Package:**
+
 |               Function               |    ops   |    ns/op   | bytes/opt |  allocs/op
 |--------------------------------------|----------|------------|-----------|-------------
 |BenchmarkKlogNothingEncoder-4         | 22702334 |   54 ns/op |  0 B/op   | 0 allocs/op
@@ -220,6 +223,7 @@ Go 1.13.4
 |BenchmarkKlogJSONEncoder10CtxFields-4 |   752006 | 1636 ns/op |  0 B/op   | 0 allocs/op
 
 **Benchmark Function:**
+
 |               Function               |    ops    |   ns/op    | bytes/opt |  allocs/op
 |--------------------------------------|-----------|------------|-----------|-------------
 |BenchmarkKlogNothingEncoder-4         | 178916641 | 6.49 ns/op |  0 B/op   | 0 allocs/op
