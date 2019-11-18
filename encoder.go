@@ -15,7 +15,6 @@
 package klog
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -42,6 +41,7 @@ type Record struct {
 
 	Lvl    Level   // The log level
 	Msg    string  // The log message
+	Ctxs   []Field // The SHARED key-value contexts. DON'T MODIFY IT!
 	Fields []Field // The key-value pairs
 }
 
@@ -128,12 +128,18 @@ func (ef *encoderFunc) Encode(r Record) {
 type EncoderOption interface{}
 
 type option struct {
-	Quote      bool
-	StringTime bool
-	EncodeTime func(*Builder, time.Time)
+	Quote   bool
+	Newline bool
+
+	TimeKey string
+	TimeFmt string
+
+	LevelKey  string
+	LoggerKey string
 }
 
 func getOption(options ...EncoderOption) (o option) {
+	o.Newline = true
 	for _, opt := range options {
 		if f, ok := opt.(func(*option)); ok {
 			f(&o)
@@ -146,25 +152,32 @@ func getOption(options ...EncoderOption) (o option) {
 // to surround the string value if it contains the space.
 func Quote() EncoderOption { return func(o *option) { o.Quote = true } }
 
-// EncodeTime sets the encoder to encode the time.
-func EncodeTime(enc func(*Builder, time.Time)) EncoderOption {
-	return func(o *option) { o.EncodeTime = enc }
-}
-
-// StringTime encodes the time as the string with the format time.RFC3339Nano
-// instead of the integer second.
-func StringTime() EncoderOption {
+// EncodeTime enables the encoder to encode the time as the format with the key,
+// which will encode the time as the integer second if format is missing.
+func EncodeTime(key string, format ...string) EncoderOption {
 	return func(o *option) {
-		o.StringTime = true
-		o.EncodeTime = func(buf *Builder, now time.Time) {
-			buf.AppendTime(now, time.RFC3339Nano)
+		o.TimeKey = key
+		if len(format) > 0 {
+			o.TimeFmt = format[0]
 		}
 	}
 }
 
-// IntegerTime encodes the time as the integer second.
-func IntegerTime() EncoderOption {
-	return EncodeTime(func(buf *Builder, now time.Time) { buf.AppendInt(now.Unix()) })
+// EncodeLevel enables the encoder to encode the level with the key.
+func EncodeLevel(key string) EncoderOption {
+	return func(o *option) { o.LevelKey = key }
+}
+
+// EncodeLogger enables the encoder to encode the logger name with the key.
+func EncodeLogger(key string) EncoderOption {
+	return func(o *option) { o.LoggerKey = key }
+}
+
+// Newline enables the encoder whether or not to append a newline.
+//
+// It is true by default.
+func Newline(newline bool) EncoderOption {
+	return func(o *option) { o.Newline = newline }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -180,74 +193,130 @@ func appendString(buf *Builder, s string, quote bool) {
 	}
 }
 
+func encodeTime(buf *Builder, t time.Time, format string) {
+	if t.IsZero() {
+		t = time.Now()
+	}
+
+	if format == "" {
+		buf.AppendInt(t.Unix())
+	} else {
+		buf.AppendTime(t, format)
+	}
+}
+
+func textEncodeFields(buf *Builder, fields []Field, depth int, quote bool, timeFmt string) {
+	depth++
+	for _, field := range fields {
+		buf.WriteString(field.Key)
+		buf.WriteByte('=')
+
+		switch v := field.Value.(type) {
+		case string:
+			appendString(buf, v, quote)
+		case error:
+			if v == nil {
+				buf.AppendAny(nil)
+			} else {
+				appendString(buf, v.Error(), quote)
+			}
+		case time.Time:
+			encodeTime(buf, v, timeFmt)
+		case fmt.Stringer:
+			appendString(buf, v.String(), quote)
+		case LazyerStack:
+			appendString(buf, v.Stack(depth), quote)
+		case Lazyer:
+			if err := buf.AppendAnyFmt(v.Lazy()); err != nil {
+				buf.WriteString("<klog.TextEncoder:Error:")
+				buf.WriteString(err.Error())
+				buf.WriteString(">")
+			}
+		default:
+			if err := buf.AppendAnyFmt(field.Value); err != nil {
+				buf.WriteString("<klog.TextEncoder:Error:")
+				buf.WriteString(err.Error())
+				buf.WriteString(">")
+			}
+		}
+
+		buf.WriteByte(' ')
+	}
+}
+
 // TextEncoder encodes the key-values log as the text.
 //
-// Notice: the key name of the level is "lvl", that of the message is "msg",
-// and that of the time is "t" if enabling the time encoder. If the logger name
-// exists, it will encode it and the key name is "logger".
-//
-// Notice: it will ignore the empty msg.
+// Notice: The message will use "msg" as the key.
 func TextEncoder(w Writer, options ...EncoderOption) Encoder {
 	opt := getOption(options...)
 	return EncoderFunc(w, func(buf *Builder, r Record) {
 		r.Depth++
 
 		// Time
-		if opt.EncodeTime != nil {
-			buf.WriteString("t=")
-			opt.EncodeTime(buf, r.Time)
-			buf.WriteString(" ")
+		if opt.TimeKey != "" {
+			buf.WriteString(opt.TimeKey)
+			buf.WriteByte('=')
+			encodeTime(buf, r.Time, opt.TimeFmt)
+			buf.WriteByte(' ')
 		}
 
 		// Logger Name
-		if r.Name != "" {
-			buf.WriteString("logger=")
+		if r.Name != "" && opt.LoggerKey != "" {
+			buf.WriteString(opt.LoggerKey)
+			buf.WriteByte('=')
 			appendString(buf, r.Name, opt.Quote)
-			buf.WriteString(" ")
+			buf.WriteByte(' ')
 		}
 
 		// Level
-		buf.WriteString("lvl=")
-		buf.WriteString(r.Lvl.String())
+		if opt.LevelKey != "" {
+			buf.WriteString(opt.LevelKey)
+			buf.WriteByte('=')
+			buf.WriteString(r.Lvl.String())
+			buf.WriteByte(' ')
+		}
 
-		// Fields
-		for _, field := range r.Fields {
-			buf.WriteString(" ")
-			buf.WriteString(field.Key)
-			buf.WriteString("=")
+		// Ctxs and Fields
+		textEncodeFields(buf, r.Ctxs, r.Depth, opt.Quote, opt.TimeFmt)
+		textEncodeFields(buf, r.Fields, r.Depth, opt.Quote, opt.TimeFmt)
 
-			switch v := field.Value.(type) {
-			case string:
-				appendString(buf, v, opt.Quote)
-			case error:
-				if v == nil {
-					buf.AppendAny(nil)
-				} else {
-					appendString(buf, v.Error(), opt.Quote)
-				}
-			case time.Time:
-				if opt.EncodeTime != nil {
-					opt.EncodeTime(buf, v)
-				}
-			case fmt.Stringer:
-				appendString(buf, v.String(), opt.Quote)
-			default:
-				if err := buf.AppendAnyFmt(field.Value); err != nil {
-					buf.WriteString("<klog.TextEncoder:Error:")
-					buf.WriteString(err.Error())
-					buf.WriteString(">")
-				}
+		// Message
+		buf.WriteString("msg=")
+		appendString(buf, r.Msg, opt.Quote)
+
+		if opt.Newline {
+			buf.WriteByte('\n')
+		}
+	})
+}
+
+func jsonEncodeFields(buf *Builder, fields []Field, depth int, timeFmt string) {
+	depth++
+	for _, field := range fields {
+		// Key
+		buf.AppendJSONString(field.Key)
+		buf.WriteString(`:`)
+
+		// Value
+		switch v := field.Value.(type) {
+		case time.Time:
+			buf.WriteByte('"')
+			encodeTime(buf, v, timeFmt)
+			buf.WriteByte('"')
+		case LazyerStack:
+			buf.AppendJSONString(v.Stack(depth))
+		case Lazyer:
+			if err := buf.AppendJSON(v.Lazy()); err != nil {
+				buf.AppendJSONString(fmt.Sprintf(`<klog.TextEncoder:Error:%s>`, err.Error()))
+			}
+		default:
+			if err := buf.AppendJSON(field.Value); err != nil {
+				buf.AppendJSONString(fmt.Sprintf(`<klog.TextEncoder:Error:%s>`, err.Error()))
 			}
 		}
 
-		// Message
-		if r.Msg != "" {
-			buf.WriteString(" msg=")
-			appendString(buf, r.Msg, opt.Quote)
-		}
-
-		buf.WriteByte('\n')
-	})
+		buf.WriteByte(',')
+	}
 }
 
 // JSONEncoder encodes the key-values log as json.
@@ -264,97 +333,45 @@ func JSONEncoder(w Writer, options ...EncoderOption) Encoder {
 		buf.WriteByte('{')
 
 		// Time
-		if opt.EncodeTime != nil {
-			buf.WriteString(`"t":"`)
-			opt.EncodeTime(buf, r.Time)
+		if opt.TimeKey != "" {
+			buf.WriteByte('"')
+			buf.WriteString(opt.TimeKey)
+			buf.WriteString(`":"`)
+			encodeTime(buf, r.Time, opt.TimeFmt)
 			buf.WriteString(`",`)
 		}
 
 		// Logger Name
-		if r.Name != "" {
-			buf.WriteString(`"logger":`)
+		if r.Name != "" && opt.LoggerKey != "" {
+			buf.WriteByte('"')
+			buf.WriteString(opt.LoggerKey)
+			buf.WriteString(`":`)
 			buf.AppendJSONString(r.Name)
-			buf.WriteString(`",`)
+			buf.WriteByte(',')
 		}
 
 		// Level
-		buf.WriteString(`"lvl":`)
-		buf.AppendJSONString(r.Lvl.String())
-
-		// Fields
-		for _, field := range r.Fields {
-			// Key
-			buf.WriteString(`,`)
-			buf.AppendJSONString(field.Key)
-			buf.WriteString(`:`)
-
-			if t, ok := field.Value.(time.Time); ok {
-				if opt.StringTime {
-					buf.WriteString(`"`)
-					opt.EncodeTime(buf, t)
-					buf.WriteString(`"`)
-				} else {
-					opt.EncodeTime(buf, t)
-				}
-				continue
-			}
-
-			// Value
-			if err := buf.AppendJSON(field.Value); err != nil {
-				buf.AppendJSONString(fmt.Sprintf(`<klog.TextEncoder:Error:%s>`, err.Error()))
-			}
+		if opt.LevelKey != "" {
+			buf.WriteByte('"')
+			buf.WriteString(opt.LevelKey)
+			buf.WriteString(`":"`)
+			buf.WriteString(r.Lvl.String())
+			buf.WriteString(`",`)
 		}
+
+		// Ctxs and Fields
+		jsonEncodeFields(buf, r.Ctxs, r.Depth, opt.TimeFmt)
+		jsonEncodeFields(buf, r.Fields, r.Depth, opt.TimeFmt)
 
 		// Message
-		if r.Msg != "" {
-			buf.WriteString(`,"msg":`)
-			buf.AppendJSONString(r.Msg)
-		}
+		buf.WriteString(`"msg":`)
+		buf.AppendJSONString(r.Msg)
 
 		// End
-		buf.WriteString("}\n")
-	})
-}
+		buf.WriteByte('}')
 
-// StdJSONEncoder is equal to JSONEncoder, which uses json.Marshal() to encode
-// it, but the performance is a little bad.
-//
-// Notice: it will ignore the empty msg.
-func StdJSONEncoder(w Writer, options ...EncoderOption) Encoder {
-	opt := getOption(options...)
-	return EncoderFunc(w, func(buf *Builder, r Record) {
-		r.Depth++
-
-		maps := make(map[string]interface{}, len(r.Fields)+8)
-		maps["lvl"] = r.Lvl.String()
-
-		if opt.EncodeTime != nil {
-			opt.EncodeTime(buf, r.Time)
-			maps["t"] = buf.String()
-			buf.Reset()
+		if opt.Newline {
+			buf.WriteByte('\n')
 		}
-
-		if r.Msg != "" {
-			maps["msg"] = r.Msg
-		}
-
-		if r.Name != "" {
-			maps["logger"] = r.Name
-		}
-
-		for _, field := range r.Fields {
-			if t, ok := field.Value.(time.Time); ok {
-				opt.EncodeTime(buf, t)
-				continue
-			}
-			maps[field.Key] = field.Value
-		}
-
-		if err := json.NewEncoder(buf).Encode(maps); err != nil {
-			panic(fmt.Errorf("<klog.StdJSONEncoder:Error>:%s", err.Error()))
-		}
-
-		// Append a newline
-		buf.WriteByte('\n')
 	})
 }

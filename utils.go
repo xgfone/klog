@@ -20,18 +20,10 @@ import (
 	"sync"
 )
 
-var (
-	// FieldSize is the default capacity of []Field to be created in the pool.
-	FieldSize = 8
+// BuilderSize is the default capacity of Builder to be created in the pool.
+var BuilderSize = 256
 
-	// BuilderSize is the default capacity of Builder to be created in the pool.
-	BuilderSize = 256
-)
-
-var (
-	fieldPool   = sync.Pool{New: func() interface{} { return make([]Field, 0, FieldSize) }}
-	builderPool = sync.Pool{New: func() interface{} { return NewBuilder(BuilderSize) }}
-)
+var builderPool = sync.Pool{New: func() interface{} { return NewBuilder(BuilderSize) }}
 
 func getBuilder() *Builder  { return builderPool.Get().(*Builder) }
 func putBuilder(b *Builder) { b.Reset(); builderPool.Put(b) }

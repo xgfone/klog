@@ -20,139 +20,40 @@ import (
 	"testing"
 )
 
-func TestLogger(t *testing.T) {
+func TestLoggerTextEncoder(t *testing.T) {
 	buf := NewBuilder(128)
-	logger := New("").WithCtx((F("caller1", Caller())))
-	logger.SetEncoder(TextEncoder(StreamWriter(buf), Quote()))
+	logger := New("").WithCtx(F("caller1", Caller()))
+	logger.SetEncoder(TextEncoder(StreamWriter(buf), Quote(), EncodeLevel("lvl")))
+
 	logger.Log(LvlInfo, "test logger", F("caller2", Caller()))
-
-	s := buf.String()
-	if s != "lvl=INFO caller1=logger_test.go:27 caller2=logger_test.go:27 msg=\"test logger\"\n" {
-		t.Error(s)
-	}
-
-	buf.Reset()
-	logger.Log(LvlInfo, "test logger", F("caller2", Caller()))
-
-	s = buf.String()
-	if s != "lvl=INFO caller1=logger_test.go:35 caller2=logger_test.go:35 msg=\"test logger\"\n" {
-		t.Error(s)
-	}
-
-	buf.Reset()
-	logger.Log(LvlInfo, "test 123")
-
-	s = buf.String()
-	if s != "lvl=INFO caller1=logger_test.go:43 msg=\"test 123\"\n" {
-		t.Error(s)
+	if buf.String() != "lvl=INFO caller1=logger_test.go:28 caller2=logger_test.go:28 msg=\"test logger\"\n" {
+		t.Error(buf.String())
 	}
 }
 
-func TestJSONEncoder(t *testing.T) {
+func TestLoggerJSONEncoder(t *testing.T) {
 	buf := NewBuilder(128)
-	logger := New("").WithCtx(F("key1", `value1"`))
-	logger.SetEncoder(JSONEncoder(StreamWriter(buf)))
-	logger.Log(LvlInfo, "testlogger", F("key2", 123))
+	logger := New("").WithCtx(F("caller1", Caller()), F("key1", `value1"`))
+	logger.SetEncoder(JSONEncoder(StreamWriter(buf), EncodeLevel("lvl")))
+	logger.Log(LvlInfo, "test json encoder", F("key2", 123))
+
+	expect := `{"lvl":"INFO","caller1":"logger_test.go:38","key1":"value1\"","key2":123,"msg":"test json encoder"}` + "\n"
+	if buf.String() != expect {
+		t.Error(buf.String())
+	}
 
 	var ms map[string]interface{}
 	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
 		t.Errorf("%s: %v", buf.String(), err)
-	} else if len(ms) != 4 {
-		t.Error(ms)
-	} else if ms["t"] != nil {
-		t.Error(ms)
-	} else if v, ok := ms["lvl"].(string); !ok || v != "INFO" {
-		t.Error(ms)
 	} else if v, ok := ms["key1"].(string); !ok || v != `value1"` {
-		t.Error(ms)
-	} else if v, ok := ms["key2"].(float64); !ok || v != 123 {
-		t.Error(ms)
-	} else if v, ok := ms["msg"].(string); !ok || v != "testlogger" {
-		t.Error(ms)
-	}
-
-	buf.Reset()
-	ms = make(map[string]interface{}, 10)
-	logger.Log(LvlInfo, "test logger", F("key2", 123))
-
-	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
-		t.Errorf("%s: %v", buf.String(), err)
-	} else if len(ms) != 4 {
-		t.Error(ms)
-	} else if ms["t"] != nil {
-		t.Error(ms)
-	} else if v, ok := ms["lvl"].(string); !ok || v != "INFO" {
-		t.Error(ms)
-	} else if v, ok := ms["key1"].(string); !ok || v != `value1"` {
-		t.Error(ms)
-	} else if v, ok := ms["key2"].(float64); !ok || v != 123 {
-		t.Error(ms)
-	} else if v, ok := ms["msg"].(string); !ok || v != "test logger" {
-		t.Error(ms)
+		t.Error(v)
 	}
 }
 
-func TestStdJSONEncoder(t *testing.T) {
-	buf := NewBuilder(128)
-	logger := New("").WithCtx(F("key1", `value1"`))
-	logger.SetEncoder(StdJSONEncoder(StreamWriter(buf)))
-	logger.Log(LvlInfo, "testlogger", F("key2", 123))
-
-	var ms map[string]interface{}
-	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
-		t.Errorf("%s: %v", buf.String(), err)
-	} else if len(ms) != 4 {
-		t.Error(ms)
-	} else if ms["t"] != nil {
-		t.Error(ms)
-	} else if v, ok := ms["lvl"].(string); !ok || v != "INFO" {
-		t.Error(ms)
-	} else if v, ok := ms["key1"].(string); !ok || v != `value1"` {
-		t.Error(ms)
-	} else if v, ok := ms["key2"].(float64); !ok || v != 123 {
-		t.Error(ms)
-	} else if v, ok := ms["msg"].(string); !ok || v != "testlogger" {
-		t.Error(ms)
-	}
-
-	buf.Reset()
-	ms = make(map[string]interface{}, 10)
-	logger.Log(LvlInfo, "test logger", F("key2", 123))
-
-	if err := json.Unmarshal(buf.Bytes(), &ms); err != nil {
-		t.Errorf("%s: %v", buf.String(), err)
-	} else if len(ms) != 4 {
-		t.Error(ms)
-	} else if ms["t"] != nil {
-		t.Error(ms)
-	} else if v, ok := ms["lvl"].(string); !ok || v != "INFO" {
-		t.Error(ms)
-	} else if v, ok := ms["key1"].(string); !ok || v != `value1"` {
-		t.Error(ms)
-	} else if v, ok := ms["key2"].(float64); !ok || v != 123 {
-		t.Error(ms)
-	} else if v, ok := ms["msg"].(string); !ok || v != "test logger" {
-		t.Error(ms)
-	}
-}
-
-type keyValueTest struct {
-	key   string
-	value interface{}
-}
-
-func (kv keyValueTest) Key() string {
-	return kv.key
-}
-
-func (kv keyValueTest) Value() interface{} {
-	return kv.value
-}
-
-func TestLogger_IsEnabled(t *testing.T) {
+func TestLoggerIsEnabled(t *testing.T) {
 	buf := NewBuilder(128)
 	logger := New("").WithLevel(LvlInfo)
-	logger.Encoder().SetWriter(StreamWriter(buf))
+	logger.SetEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl")))
 
 	if logger.(interface{ IsEnabled(Level) bool }).IsEnabled(LvlDebug) {
 		logger.Log(LvlDebug, "debug")

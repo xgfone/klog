@@ -23,7 +23,7 @@ import (
 
 func TestDefaultLogger(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	logger := WithEncoder(TextEncoder(StreamWriter(buf))).WithCtx(F("caller", Caller()))
+	logger := WithEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl"))).WithCtx(F("caller", Caller()))
 	SetDefaultLogger(logger)
 
 	Info("msg1", F("key", "value"))

@@ -52,8 +52,10 @@ func BenchmarkKlogJSONEncoder(b *testing.B) {
 	})
 }
 
-func BenchmarkKlogStdJSONEncoder(b *testing.B) {
-	logger := New("").WithEncoder(StdJSONEncoder(DiscardWriter()))
+func BenchmarkKlogTextEncoder10CtxFields(b *testing.B) {
+	fs := []Field{F("k1", "v1"), F("k2", "v2"), F("k3", "v3"), F("k4", "v4"), F("k5", "v5"),
+		F("k6", "v6"), F("k7", "v7"), F("k8", "v8"), F("k9", "v9"), F("k10", "v10")}
+	logger := New("").WithEncoder(TextEncoder(DiscardWriter())).WithCtx(fs...)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -64,32 +66,10 @@ func BenchmarkKlogStdJSONEncoder(b *testing.B) {
 	})
 }
 
-func BenchmarkKlogContextFieldsTextEncoder(b *testing.B) {
-	logger := New("").WithEncoder(TextEncoder(DiscardWriter())).WithCtx(F("key", "value"))
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Log(LvlInfo, "message")
-		}
-	})
-}
-
-func BenchmarkKlogContextFieldsJSONEncoder(b *testing.B) {
-	logger := New("").WithEncoder(JSONEncoder(DiscardWriter())).WithCtx(F("key", "value"))
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Log(LvlInfo, "message")
-		}
-	})
-}
-
-func BenchmarkKlogContextFieldsStdJSONEncoder(b *testing.B) {
-	logger := New("").WithEncoder(StdJSONEncoder(DiscardWriter())).WithCtx(F("key", "value"))
+func BenchmarkKlogJSONEncoder10CtxFields(b *testing.B) {
+	fs := []Field{F("k1", "v1"), F("k2", "v2"), F("k3", "v3"), F("k4", "v4"), F("k5", "v5"),
+		F("k6", "v6"), F("k7", "v7"), F("k8", "v8"), F("k9", "v9"), F("k10", "v10")}
+	logger := New("").WithEncoder(JSONEncoder(DiscardWriter())).WithCtx(fs...)
 
 	b.ReportAllocs()
 	b.ResetTimer()

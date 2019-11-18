@@ -28,15 +28,26 @@ type Logger interface {
 type ExtLogger interface {
 	Logger
 
-	Encoder() Encoder     // Return the encoder of the logger
-	SetEncoder(Encoder)   // Reset the encoder
 	SetLevel(level Level) // Reset the level
+	SetEncoder(Encoder)   // Reset the encoder
+	Encoder() Encoder     // Return the encoder of the logger
 
 	WithCtx(fields ...Field) ExtLogger // Return a new Logger with the fields
 	WithName(name string) ExtLogger    // Return a new Logger with the new name
 	WithLevel(level Level) ExtLogger   // Return a new Logger with the level
 	WithEncoder(e Encoder) ExtLogger   // Return a new Logger with the encoder
 	WithDepth(depth int) ExtLogger     // Return a new Logger with the increased depth
+}
+
+// GetEncoderFromLogger returns the encoder from logger if it has the method
+// `func Encoder() Encoder`. Or, it will return defaultEncoder if given or nil.
+func GetEncoderFromLogger(logger Logger, defaultEncoder ...Encoder) Encoder {
+	if l, ok := logger.(interface{ Encoder() Encoder }); ok {
+		return l.Encoder()
+	} else if len(defaultEncoder) > 0 {
+		return defaultEncoder[0]
+	}
+	return nil
 }
 
 type logger struct {
@@ -50,7 +61,8 @@ type logger struct {
 // New creates a new ExtLogger, which will use TextEncoder as the encoder
 // and output the log to os.Stdout.
 func New(name string) ExtLogger {
-	e := TextEncoder(SafeWriter(StreamWriter(os.Stdout)), Quote(), StringTime())
+	w := SafeWriter(StreamWriter(os.Stdout))
+	e := TextEncoder(w, Quote(), EncodeLevel("lvl"), EncodeLogger("logger"), EncodeTime("t", time.RFC3339Nano))
 	return &logger{name: name, level: LvlDebug, encoder: e, depth: 1}
 }
 
@@ -80,36 +92,15 @@ func (l *logger) WithCtx(fields ...Field) ExtLogger {
 func (l *logger) IsEnabled(lvl Level) bool { return lvl.Priority() >= l.level.Priority() }
 func (l *logger) Log(lvl Level, msg string, fields ...Field) {
 	if l.IsEnabled(lvl) {
-		var fs []Field
-		if len(l.fields) > 0 {
-			fs = append(fieldPool.Get().([]Field), l.fields...)
-			fs = append(fs, fields...)
-			fields = fs
-		}
-
 		r := Record{
-			Time:  time.Now(),
 			Name:  l.name,
 			Depth: l.depth,
 
 			Lvl:    lvl,
 			Msg:    msg,
+			Ctxs:   l.fields,
 			Fields: fields,
 		}
-
-		for i := range fields {
-			switch v := fields[i].Value.(type) {
-			case Valuer:
-				fields[i].Value = v(r)
-			case func(Record) interface{}:
-				fields[i].Value = v(r)
-			}
-		}
-
 		l.encoder.Encode(r)
-
-		if fs != nil {
-			fieldPool.Put(fs[:0])
-		}
 	}
 }
