@@ -43,10 +43,10 @@ func SetDefaultLogger(l ExtLogger) {
 func GetEncoder() Encoder { return defaultLogger.Encoder() }
 
 // SetEncoder resets the encoder of the default logger, which is TextEncoder by default.
-func SetEncoder(enc Encoder) { defaultLogger.SetEncoder(enc) }
+func SetEncoder(enc Encoder) { originLogger.SetEncoder(enc) }
 
 // SetLevel resets the level of the default logger, which is LvlDebug by default.
-func SetLevel(lvl Level) { defaultLogger.SetLevel(lvl) }
+func SetLevel(lvl Level) { originLogger.SetLevel(lvl) }
 
 // WithCtx returns a new ExtLogger based on the default logger with the fields.
 func WithCtx(fields ...Field) ExtLogger { return originLogger.WithCtx(fields...) }
