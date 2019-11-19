@@ -14,6 +14,8 @@
 
 package klog
 
+import "log"
+
 // LevelLogger is a convenient logger interface based on the level.
 type LevelLogger interface {
 	Trace(msg string, fields ...Field)
@@ -65,3 +67,15 @@ func (l flogger) Debug(msg string, fields ...Field)      { l.Log(LvlDebug, msg, 
 func (l flogger) Info(msg string, fields ...Field)       { l.Log(LvlInfo, msg, fields...) }
 func (l flogger) Warn(msg string, fields ...Field)       { l.Log(LvlWarn, msg, fields...) }
 func (l flogger) Error(msg string, fields ...Field)      { l.Log(LvlError, msg, fields...) }
+
+// NewStdLogger returns a new log.Logger with the writer.
+//
+// If not giving flags, it is log.LstdFlags|log.Lmicroseconds|log.Lshortfile
+// by default.
+func NewStdLogger(w Writer, prefix string, flags ...int) *log.Logger {
+	flag := log.LstdFlags | log.Lmicroseconds | log.Lshortfile
+	if len(flags) > 0 {
+		flag = flags[0]
+	}
+	return log.New(ToIOWriter(w), prefix, flag)
+}
