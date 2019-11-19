@@ -49,6 +49,8 @@ func ParseSize(s string) (size int64, err error) {
 
 	var base int64
 	switch _len := len(s) - 1; s[_len] {
+	case 'b', 'B':
+		s = s[:_len]
 	case 'k':
 		base = 1000
 		s = s[:_len]
