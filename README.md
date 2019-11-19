@@ -39,11 +39,11 @@ func main() {
 		WithLevel(klog.LvlWarn).
 		WithCtx(klog.F("caller", klog.Caller()))
 
-	log.Log(klog.LvlInfo, "info log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
-	log.Log(klog.LvlError, "error log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
+	log.Log(klog.LvlInfo, "log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
+	log.Log(klog.LvlError, "log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
 
 	// Output:
-	// t=1574056059 logger=loggername lvl=ERROR caller=main.go:23 key1=value1 key2=value2 msg="error log msg"
+	// t=1574056059 logger=loggername lvl=ERROR caller=main.go:23 key1=value1 key2=value2 msg="log msg"
 }
 ```
 
@@ -83,8 +83,8 @@ func main() {
 	klog.SetDefaultLogger(log)
 
 	// Emit the log with the fields.
-	klog.Info("info log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
-	klog.Error("error log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
+	klog.Info("msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
+	klog.Error("msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
 
 	// Emit the log with the formatter.
 	klog.Infof("%s log msg", "infof")
@@ -92,7 +92,7 @@ func main() {
 	klog.Ef(fmt.Errorf("error"), "%s log msg", "errorf")
 
 	// Output:
-	// t=2019-11-18T14:01:08.7345586+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg="error log msg"
+	// t=2019-11-18T14:01:08.7345586+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg="msg"
 	// t=2019-11-18T14:01:08.735969+08:00 lvl=ERROR caller=main.go:18 msg="errorf log msg"
 	// t=2019-11-18T14:01:08.7360115+08:00 lvl=ERROR caller=main.go:19 err=error msg="errorf log msg"
 }
@@ -196,9 +196,9 @@ Go 1.13.4
 
 |               Function               |    ops   |   ns/op    | bytes/opt |  allocs/op
 |--------------------------------------|----------|------------|-----------|-------------
-|BenchmarkKlogNothingEncoder-4         | 89703194 | 13.3 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder-4            | 26699569 | 47.2 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder-4            | 24100544 | 55.1 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogNothingEncoder-4         | 89703194 |  13 ns/op  |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder-4            | 26699569 |  47 ns/op  |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder-4            | 24100544 |  55 ns/op  |  0 B/op   | 0 allocs/op
 |BenchmarkKlogTextEncoder10CtxFields-4 |  9012544 |  129 ns/op |  0 B/op   | 0 allocs/op
 |BenchmarkKlogJSONEncoder10CtxFields-4 |  3254241 |  364 ns/op |  0 B/op   | 0 allocs/op
 
@@ -224,10 +224,10 @@ Go 1.13.4
 
 **Benchmark Function:**
 
-|               Function               |    ops    |   ns/op    | bytes/opt |  allocs/op
-|--------------------------------------|-----------|------------|-----------|-------------
-|BenchmarkKlogNothingEncoder-4         | 178916641 | 6.49 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder-4            |  46240279 | 25.4 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder-4            |  52967364 | 26.0 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder10CtxFields-4 |  18441790 | 68.1 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder10CtxFields-4 |   6526779 | 183 ns/op  |  0 B/op   | 0 allocs/op
+|               Function               |    ops    |   ns/op   | bytes/opt |  allocs/op
+|--------------------------------------|-----------|-----------|-----------|-------------
+|BenchmarkKlogNothingEncoder-4         | 178916641 | 7 ns/op   |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder-4            |  46240279 | 25 ns/op  |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder-4            |  52967364 | 26 ns/op  |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder10CtxFields-4 |  18441790 | 68 ns/op  |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder10CtxFields-4 |   6526779 | 183 ns/op |  0 B/op   | 0 allocs/op
