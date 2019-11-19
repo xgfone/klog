@@ -283,6 +283,17 @@ func SplitWriter(getWriter func(Level) Writer, flush ...func() error) WriteFlush
 // Notice: if the directory in where filename is does not exist, it will be
 // created automatically.
 func FileWriter(filename, filesize string, filenum int) (WriteFlushCloser, error) {
+	return fileWriter(filename, filesize, filenum, true)
+}
+
+// FileWriterWithoutLock is the same as FileWriter, but not use the lock
+// to ensure that it's thread-safe to write the log.
+func FileWriterWithoutLock(filename, filesize string, filenum int) (WriteFlushCloser, error) {
+	return fileWriter(filename, filesize, filenum, false)
+}
+
+func fileWriter(filename, filesize string, filenum int,
+	lock bool) (WriteFlushCloser, error) {
 	if filename == "" {
 		return ToWriteFlushCloser(SafeWriter(StreamWriter(os.Stdout))), nil
 	}
@@ -298,7 +309,12 @@ func FileWriter(filename, filesize string, filenum int) (WriteFlushCloser, error
 	}
 
 	os.MkdirAll(filepath.Dir(filename), 0755)
-	file, err := NewSizedRotatingFile(filename, int(size), filenum)
+	var file *SizedRotatingFile
+	if lock {
+		file, err = NewSizedRotatingFile(filename, int(size), filenum)
+	} else {
+		file, err = NewSizedRotatingFileWithoutLock(filename, int(size), filenum)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -312,28 +328,43 @@ func FileWriter(filename, filesize string, filenum int) (WriteFlushCloser, error
 // The default permission of the log file is 0644.
 func NewSizedRotatingFile(filename string, size, count int,
 	mode ...os.FileMode) (*SizedRotatingFile, error) {
+	return newSizedRotatingFile(filename, size, count, true, mode...)
+}
 
+// NewSizedRotatingFileWithoutLock is equal to NewSizedRotatingFile,
+// But not use the lock to ensure that it's thread-safe to write the log.
+func NewSizedRotatingFileWithoutLock(filename string, size, count int,
+	mode ...os.FileMode) (*SizedRotatingFile, error) {
+	return newSizedRotatingFile(filename, size, count, false, mode...)
+}
+
+func newSizedRotatingFile(filename string, size, count int, lock bool,
+	mode ...os.FileMode) (*SizedRotatingFile, error) {
 	var _mode os.FileMode = 0644
 	if len(mode) > 0 && mode[0] > 0 {
 		_mode = mode[0]
 	}
 
-	w := SizedRotatingFile{
+	w := &SizedRotatingFile{
 		filename:    filename,
 		filePerm:    _mode,
 		maxSize:     size,
 		backupCount: count,
 	}
 
+	if lock {
+		w.lock = new(sync.Mutex)
+	}
+
 	if err := w.open(); err != nil {
 		return nil, err
 	}
-	return &w, nil
+	return w, nil
 }
 
 // SizedRotatingFile is a file rotating logging writer based on the size.
 type SizedRotatingFile struct {
-	lock sync.Mutex
+	lock *sync.Mutex
 	file *os.File
 
 	filePerm    os.FileMode
@@ -343,23 +374,36 @@ type SizedRotatingFile struct {
 	nbytes      int
 }
 
+func (f *SizedRotatingFile) locked() {
+	if f.lock != nil {
+		f.lock.Lock()
+	}
+}
+
+func (f *SizedRotatingFile) unlocked() {
+	if f.lock != nil {
+		f.lock.Unlock()
+	}
+}
+
 // Close implements io.Closer.
-func (f *SizedRotatingFile) Close() (err error) {
-	f.lock.Lock()
-	err = f.close()
-	f.lock.Unlock()
-	return
+func (f *SizedRotatingFile) Close() error {
+	f.locked()
+	defer f.unlocked()
+	return f.close()
 }
 
 // Flush flushes the data to the underlying disk.
 func (f *SizedRotatingFile) Flush() error {
+	f.locked()
+	defer f.unlocked()
 	return f.file.Sync()
 }
 
 // Write implements io.Writer.
 func (f *SizedRotatingFile) Write(data []byte) (n int, err error) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
+	f.locked()
+	defer f.unlocked()
 
 	if f.file == nil {
 		return 0, errors.New("the file has been closed")
