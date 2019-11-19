@@ -76,6 +76,7 @@ func (l *logger) clone() *logger {
 	}
 }
 
+func (l *logger) Level() Level                    { return l.level }
 func (l *logger) Encoder() Encoder                { return l.encoder }
 func (l *logger) SetEncoder(enc Encoder)          { l.encoder = enc }
 func (l *logger) SetLevel(level Level)            { l.level = level }
