@@ -27,31 +27,38 @@
 //
 // Example
 //
-//      package main
+// package main
 //
-//      import (
-//      	"fmt"
+//     import (
+//         "fmt"
 //
-//      	"github.com/xgfone/klog/v2"
-//      )
+//         "github.com/xgfone/klog/v2"
+//     )
 //
-//      func main() {
-//      	// Initialize the default logger.
-//      	log := klog.WithLevel(klog.LvlWarn).WithCtx(klog.F("caller", klog.Caller()))
-//      	klog.SetDefaultLogger(log)
+//     func main() {
+//         // Initialize the default logger.
+//         log := klog.WithLevel(klog.LvlWarn).WithCtx(klog.F("caller", klog.Caller()))
+//         // if file, err := klog.FileWriter("file.log", "100M", 100); err == nil {
+//         //     log.Encoder().SetWriter(file)
+//         // } else {
+//         //     fmt.Println(err)
+//         //     return
+//         // }
+//         klog.SetDefaultLogger(log)
 //
-//      	// Emit the log with the fields.
-//      	klog.Info("info log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
-//      	klog.Error("error log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
+//         // Emit the log with the fields.
+//         klog.Info("msg", klog.F("k1", "v1"), klog.F("k2", "v2"))
+//         klog.Error("msg", klog.F("k1", "v1"), klog.F("k2", "v2"))
 //
-//      	// Emit the log with the formatter.
-//      	klog.Infof("%s log msg", "infof")
-//      	klog.Errorf("%s log msg", "errorf")
-//      	klog.Ef(fmt.Errorf("error"), "%s log msg", "errorf")
+//         // Emit the log with the formatter.
+//         klog.Infof("log %s", "msg")
+//         klog.Warnf("log %s", "msg")
+//         klog.Ef(fmt.Errorf("e"), "log %s", "msg")
 //
-//      	// Output:
-//      	// t=2019-11-18T14:01:08.7345586+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg="error log msg"
-//      	// t=2019-11-18T14:01:08.735969+08:00 lvl=ERROR caller=main.go:18 msg="errorf log msg"
-//      	// t=2019-11-18T14:01:08.7360115+08:00 lvl=ERROR caller=main.go:19 err=error msg="errorf log msg"
-//      }
+//         // Output:
+//         // t=2019-11-19T09:54:36.4956708+08:00 lvl=ERROR caller=main.go:22 k1=v1 k2=v2 msg=msg
+//         // t=2019-11-19T09:54:36.4973725+08:00 lvl=WARN caller=main.go:26 msg="log msg"
+//         // t=2019-11-19T09:54:36.4974311+08:00 lvl=ERROR caller=main.go:27 err=e msg="log msg"
+//     }
+//
 package klog
