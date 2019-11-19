@@ -15,6 +15,7 @@
 package klog
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -208,6 +209,17 @@ func StreamWriter(w io.Writer) WriteFlushCloser {
 	return WriteFlushCloserFunc(func(level Level, p []byte) (int, error) {
 		return w.Write(p)
 	}, getFlush(w), getClose(w))
+}
+
+// BufferWriter returns a new WriteFlushCloser to write all logs to a buffer
+// which flushes into the wrapped writer whenever it is available for writing.
+//
+// It uses SafeWriter to write all logs to the buffer thread-safely.
+// So the first argument w may not be thread-safe.
+func BufferWriter(w Writer, bufferSize int) WriteFlushCloser {
+	bw := bufio.NewWriterSize(ToIOWriter(w), bufferSize)
+	sw := SafeWriter(StreamWriter(bw))
+	return WriteFlushCloserFunc(sw.Write, bw.Flush, getClose(w))
 }
 
 // NetWriter opens a socket to the given address and writes the log
