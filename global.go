@@ -14,7 +14,19 @@
 
 package klog
 
-var originLogger, defaultLogger ExtLogger
+type originLoggerWrapper struct{ ExtLogger }
+
+func (o originLoggerWrapper) SetEncoder(enc Encoder) {
+	o.ExtLogger.SetEncoder(enc)
+	defaultLogger.SetEncoder(enc)
+}
+func (o originLoggerWrapper) SetLevel(lvl Level) {
+	o.ExtLogger.SetLevel(lvl)
+	defaultLogger.SetLevel(lvl)
+}
+
+var defaultLogger ExtLogger
+var originLogger originLoggerWrapper
 
 func init() { SetDefaultLogger(New("")) }
 
@@ -22,7 +34,10 @@ func init() { SetDefaultLogger(New("")) }
 func GetDefaultLogger() ExtLogger { return originLogger }
 
 // SetDefaultLogger sets the default logger to l.
-func SetDefaultLogger(l ExtLogger) { originLogger = l; defaultLogger = l.WithDepth(1) }
+func SetDefaultLogger(l ExtLogger) {
+	originLogger = originLoggerWrapper{l}
+	defaultLogger = l.WithDepth(1)
+}
 
 // GetEncoder returns the encoder of the default logger.
 func GetEncoder() Encoder { return defaultLogger.Encoder() }

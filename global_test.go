@@ -23,17 +23,23 @@ import (
 
 func TestDefaultLogger(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	logger := WithEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl"))).WithCtx(F("caller", Caller()))
-	SetDefaultLogger(logger)
+	log := WithEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl"))).WithCtx(F("caller", Caller()))
+	SetDefaultLogger(log)
+	GetDefaultLogger().SetLevel(LvlInfo)
+	lvl1 := originLogger.ExtLogger.(*logger).level.String()
+	lvl2 := defaultLogger.(*logger).level.String()
+	if lvl1 != lvl2 {
+		t.Errorf("the level change from '%s' to '%s'", lvl1, lvl2)
+	}
 
 	Info("msg1", F("key", "value"))
 	Infof("%s", "msg2")
 	Ef(fmt.Errorf("error"), "msg3")
 
 	expectedLines := []string{
-		"lvl=INFO caller=global_test.go:29 key=value msg=msg1",
-		"lvl=INFO caller=global_test.go:30 msg=msg2",
-		"lvl=ERROR caller=global_test.go:31 err=error msg=msg3",
+		"lvl=INFO caller=global_test.go:35 key=value msg=msg1",
+		"lvl=INFO caller=global_test.go:36 msg=msg2",
+		"lvl=ERROR caller=global_test.go:37 err=error msg=msg3",
 		"",
 	}
 
