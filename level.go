@@ -72,7 +72,16 @@ func (l namedLevel) WriteTo(w io.Writer) (int64, error) {
 }
 
 // Levels is a set of Level, which is used to get the level by the name.
-var Levels map[string]Level
+var Levels = map[string]Level{
+	"TRACE": LvlTrace,
+	"DEBUG": LvlDebug,
+	"INFO":  LvlInfo,
+	"WARN":  LvlWarn,
+	"ERROR": LvlError,
+	"CRIT":  LvlCrit,
+	"EMERG": LvlEmerg,
+	"MAX":   LvlMax,
+}
 
 // NameToLevel returns the Level by the name, which is case Insensitive.
 //
