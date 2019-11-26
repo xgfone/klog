@@ -16,6 +16,7 @@ package klog
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -104,4 +105,18 @@ func (l *logger) Log(lvl Level, msg string, fields ...Field) {
 		}
 		l.encoder.Encode(r)
 	}
+}
+
+// NewSimpleLogger returns a new simple logger.
+func NewSimpleLogger(name, level, filePath, fileSize string, fileNum int) (ExtLogger, error) {
+	log := New(name).WithLevel(NameToLevel(level))
+	if filePath != "" {
+		os.MkdirAll(filepath.Dir(filePath), 0755)
+		wc, err := FileWriter(filePath, fileSize, fileNum)
+		if err != nil {
+			return nil, err
+		}
+		log.Encoder().SetWriter(wc)
+	}
+	return log, nil
 }

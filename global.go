@@ -14,6 +14,11 @@
 
 package klog
 
+import (
+	"os"
+	"path/filepath"
+)
+
 type originLoggerWrapper struct{ ExtLogger }
 
 func (o originLoggerWrapper) SetEncoder(enc Encoder) {
@@ -29,6 +34,21 @@ var defaultLogger ExtLogger
 var originLogger originLoggerWrapper
 
 func init() { SetDefaultLogger(New("")) }
+
+// UpdateDefaultLogger updates the default logger with NameToLevel(level)
+// and FileWriter(filePath, fileSize, fileNum) if filePath is not "".
+func UpdateDefaultLogger(level, filePath, fileSize string, fileNum int) error {
+	if filePath != "" {
+		os.MkdirAll(filepath.Dir(filePath), 0755)
+		wc, err := FileWriter(filePath, fileSize, fileNum)
+		if err != nil {
+			return err
+		}
+		GetEncoder().SetWriter(wc)
+	}
+	SetLevel(NameToLevel(level))
+	return nil
+}
 
 // GetDefaultLogger returns the default logger.
 func GetDefaultLogger() ExtLogger { return originLogger }
