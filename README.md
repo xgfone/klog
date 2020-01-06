@@ -159,7 +159,7 @@ You can use `WriterFunc` or `WriteCloserFunc` to implement the interface `Writer
 
 ### Lazy evaluation
 
-`Field` supports the lazy evaluation, and you can use it by `LazyField`, such as `LazyField("key", func() interface{} {return "value"})`. And there are some built-in lazy `Field`, such as `Caller()`, `CallerStack()`.
+`Field` supports the lazy evaluation, such as `F("key", func() interface{} {return "value"})`. And there are some built-in lazy `Field`, such as `Caller()`, `CallerStack()`.
 
 
 ## Performance
@@ -176,10 +176,10 @@ Go 1.13.4
 
 **Benchmark Package:**
 
-|               Function               |    ops    |   ns/op   | bytes/opt |  allocs/op
-|--------------------------------------|-----------|-----------|-----------|-------------
-|BenchmarkKlogNothingEncoder-4         | 194001346 | 6 ns/op   |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder-4            |  42973323 | 24 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder-4            |  57550428 | 21 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder10CtxFields-4 |  10026812 | 107 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder10CtxFields-4 |   6574923 | 221 ns/op |  0 B/op   | 0 allocs/op
+|               Function               |    ops    | ns/op | bytes/opt | allocs/op
+|--------------------------------------|-----------|- -----|-----------|----------
+|BenchmarkKlogNothingEncoder-4         | 194001346 |    6  |     0     |    0
+|BenchmarkKlogTextEncoder-4            |  42973323 |   24  |     0     |    0
+|BenchmarkKlogJSONEncoder-4            |  57550428 |   21  |     0     |    0
+|BenchmarkKlogTextEncoder10CtxFields-4 |  10026812 |  107  |     0     |    0
+|BenchmarkKlogJSONEncoder10CtxFields-4 |   6574923 |  221  |     0     |    0

@@ -30,28 +30,26 @@ type Field interface {
 type field struct {
 	key   string
 	value interface{}
-	lazy  func() interface{}
 }
 
 func (f field) Key() string { return f.key }
 func (f field) Value() interface{} {
-	if f.lazy != nil {
-		return f.lazy()
+	switch v := f.value.(type) {
+	case func() interface{}:
+		return v()
+	case func() string:
+		return v()
+	default:
+		return v
 	}
-	return f.value
 }
 
 // E is equal to F("err", err).
 func E(err error) Field { return field{key: "err", value: err} }
 
-// F returns a new Field.
+// F returns a new Field. If value is "func() interface{}" or "func() string",
+// it will be evaluated when the log is emitted, that's, it is lazy.
 func F(key string, value interface{}) Field { return field{key: key, value: value} }
-
-// LazyField returns the lazy field, which will evaluate the value when getting
-// the field value.
-func LazyField(key string, value func() interface{}) Field {
-	return field{key: key, lazy: value}
-}
 
 // Record represents a log record.
 type Record struct {
