@@ -2,7 +2,7 @@
 
 Package `klog` provides an simple, flexible, extensible, powerful and structured logging tool based on the level, which has done the better balance between the flexibility and the performance. It is inspired by [log15](https://github.com/inconshreveable/log15), [logrus](https://github.com/sirupsen/logrus), [go-kit](https://github.com/go-kit/kit) and [zerolog](github.com/rs/zerolog).
 
-**API has been stable.** The current is `v2.x` and support Go `1.x`.
+**API has been stable.** The current is `v3.x` and support Go `1.x`.
 
 
 ## Features
@@ -159,50 +159,12 @@ You can use `WriterFunc` or `WriteCloserFunc` to implement the interface `Writer
 
 ### Lazy evaluation
 
-```go
-type Lazyer interface {
-	Lazy() interface{}
-}
-```
-
-If the type of a certain value is `Lazyer`, the encoder will call it to get the corresponding value firstly. There are some built-in `Lazyer`, such as `Caller()`, `CallerStack()`.
+`Field` supports the lazy evaluation, and you can use it by `LazyField`, such as `LazyField("key", func() interface{} {return "value"})`. And there are some built-in lazy `Field`, such as `Caller()`, `CallerStack()`.
 
 
 ## Performance
 
 The log framework itself has no any performance costs and the key of the bottleneck is the encoder.
-
-### Test 1
-
-```
-MacBook Pro(Retina, 13-inch, Mid 2014)
-Intel Core i5 2.6GHz
-8GB DDR3 1600MHz
-macOS Mojave
-Go 1.13.4
-```
-
-**Benchmark Package:**
-
-|               Function               |    ops   |    ns/op   | bytes/opt |  allocs/op
-|--------------------------------------|----------|------------|-----------|-------------
-|BenchmarkKlogNothingEncoder-4         | 30076050 |   43 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder-4            |  9153582 |  137 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder-4            |  7640342 |  148 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder10CtxFields-4 |  2020828 |  606 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder10CtxFields-4 |   960454 | 1250 ns/op |  0 B/op   | 0 allocs/op
-
-**Benchmark Function:**
-
-|               Function               |    ops   |   ns/op    | bytes/opt |  allocs/op
-|--------------------------------------|----------|------------|-----------|-------------
-|BenchmarkKlogNothingEncoder-4         | 89703194 |  13 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder-4            | 26699569 |  47 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder-4            | 24100544 |  55 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder10CtxFields-4 |  9012544 |  129 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder10CtxFields-4 |  3254241 |  364 ns/op |  0 B/op   | 0 allocs/op
-
-### Test 2
 
 ```
 Dell Vostro 3470
@@ -214,20 +176,10 @@ Go 1.13.4
 
 **Benchmark Package:**
 
-|               Function               |    ops   |    ns/op   | bytes/opt |  allocs/op
-|--------------------------------------|----------|------------|-----------|-------------
-|BenchmarkKlogNothingEncoder-4         | 22702334 |   54 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder-4            |  8355602 |  149 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder-4            |  6503613 |  185 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder10CtxFields-4 |  1445288 |  831 ns/op |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder10CtxFields-4 |   752006 | 1636 ns/op |  0 B/op   | 0 allocs/op
-
-**Benchmark Function:**
-
 |               Function               |    ops    |   ns/op   | bytes/opt |  allocs/op
 |--------------------------------------|-----------|-----------|-----------|-------------
-|BenchmarkKlogNothingEncoder-4         | 178916641 | 7 ns/op   |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder-4            |  46240279 | 25 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder-4            |  52967364 | 26 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogTextEncoder10CtxFields-4 |  18441790 | 68 ns/op  |  0 B/op   | 0 allocs/op
-|BenchmarkKlogJSONEncoder10CtxFields-4 |   6526779 | 183 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogNothingEncoder-4         | 194001346 | 6 ns/op   |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder-4            |  42973323 | 24 ns/op  |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder-4            |  57550428 | 21 ns/op  |  0 B/op   | 0 allocs/op
+|BenchmarkKlogTextEncoder10CtxFields-4 |  10026812 | 107 ns/op |  0 B/op   | 0 allocs/op
+|BenchmarkKlogJSONEncoder10CtxFields-4 |   6574923 | 221 ns/op |  0 B/op   | 0 allocs/op

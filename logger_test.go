@@ -22,10 +22,10 @@ import (
 
 func TestLoggerTextEncoder(t *testing.T) {
 	buf := NewBuilder(128)
-	logger := New("").WithCtx(F("caller1", Caller()))
+	logger := New("").WithCtx(Caller("caller1"))
 	logger.SetEncoder(TextEncoder(StreamWriter(buf), Quote(), EncodeLevel("lvl")))
 
-	logger.Log(LvlInfo, "test logger", F("caller2", Caller()))
+	logger.Log(LvlInfo, "test logger", Caller("caller2"))
 	if buf.String() != "lvl=INFO caller1=logger_test.go:28 caller2=logger_test.go:28 msg=\"test logger\"\n" {
 		t.Error(buf.String())
 	}
@@ -33,7 +33,7 @@ func TestLoggerTextEncoder(t *testing.T) {
 
 func TestLoggerJSONEncoder(t *testing.T) {
 	buf := NewBuilder(128)
-	logger := New("").WithCtx(F("caller1", Caller()), F("key1", `value1"`))
+	logger := New("").WithCtx(Caller("caller1"), F("key1", `value1"`))
 	logger.SetEncoder(JSONEncoder(StreamWriter(buf), EncodeLevel("lvl")))
 	logger.Log(LvlInfo, "test json encoder", F("key2", 123))
 

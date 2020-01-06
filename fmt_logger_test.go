@@ -23,8 +23,8 @@ func TestLevelLogger(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	log := New("")
 	log.SetEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl")))
-	logger := ToLevelLogger(log.WithCtx(F("caller1", Caller())))
-	logger.Info("msg", F("caller2", Caller()), F("key", "value"))
+	logger := ToLevelLogger(log.WithCtx(Caller("caller1")))
+	logger.Info("msg", Caller("caller2"), F("key", "value"))
 
 	expect := "lvl=INFO caller1=fmt_logger_test.go:27 caller2=fmt_logger_test.go:27 key=value msg=msg\n"
 	if buf.String() != expect {
@@ -36,7 +36,7 @@ func TestPrintfer(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	log := New("")
 	log.SetEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl")))
-	logger := ToPrintfer(log.WithCtx(F("caller", Caller())))
+	logger := ToPrintfer(log.WithCtx(Caller("caller")))
 	logger.Printf("test %s", "Printfer")
 
 	expect := "lvl=INFO caller=fmt_logger_test.go:40 msg=test Printfer\n"
@@ -49,7 +49,7 @@ func TestFmtLogger(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	log := New("")
 	log.SetEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl")))
-	logger := ToFmtLogger(log.WithCtx(F("caller", Caller())))
+	logger := ToFmtLogger(log.WithCtx(Caller("caller")))
 	logger.Infof("test %s", "FmtLogger")
 
 	expect := "lvl=INFO caller=fmt_logger_test.go:53 msg=test FmtLogger\n"

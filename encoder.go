@@ -22,16 +22,36 @@ import (
 )
 
 // Field represents a key-value pair.
-type Field struct {
-	Key   string
-	Value interface{}
+type Field interface {
+	Key() string
+	Value() interface{}
+}
+
+type field struct {
+	key   string
+	value interface{}
+	lazy  func() interface{}
+}
+
+func (f field) Key() string { return f.key }
+func (f field) Value() interface{} {
+	if f.lazy != nil {
+		return f.lazy()
+	}
+	return f.value
 }
 
 // E is equal to F("err", err).
-func E(err error) Field { return Field{Key: "err", Value: err} }
+func E(err error) Field { return field{key: "err", value: err} }
 
 // F returns a new Field.
-func F(key string, value interface{}) Field { return Field{Key: key, Value: value} }
+func F(key string, value interface{}) Field { return field{key: key, value: value} }
+
+// LazyField returns the lazy field, which will evaluate the value when getting
+// the field value.
+func LazyField(key string, value func() interface{}) Field {
+	return field{key: key, lazy: value}
+}
 
 // Record represents a log record.
 type Record struct {
@@ -208,10 +228,17 @@ func encodeTime(buf *Builder, t time.Time, format string) {
 func textEncodeFields(buf *Builder, fields []Field, depth int, quote bool, timeFmt string) {
 	depth++
 	for _, field := range fields {
-		buf.WriteString(field.Key)
+		buf.WriteString(field.Key())
 		buf.WriteByte('=')
 
-		switch v := field.Value.(type) {
+		var value interface{}
+		if s, ok := field.(FieldStack); ok {
+			value = s.Stack(depth)
+		} else {
+			value = field.Value()
+		}
+
+		switch v := value.(type) {
 		case string:
 			appendString(buf, v, quote)
 		case error:
@@ -224,16 +251,8 @@ func textEncodeFields(buf *Builder, fields []Field, depth int, quote bool, timeF
 			encodeTime(buf, v, timeFmt)
 		case fmt.Stringer:
 			appendString(buf, v.String(), quote)
-		case LazyerStack:
-			appendString(buf, v.Stack(depth), quote)
-		case Lazyer:
-			if err := buf.AppendAnyFmt(v.Lazy()); err != nil {
-				buf.WriteString("<klog.TextEncoder:Error:")
-				buf.WriteString(err.Error())
-				buf.WriteString(">")
-			}
 		default:
-			if err := buf.AppendAnyFmt(field.Value); err != nil {
+			if err := buf.AppendAnyFmt(v); err != nil {
 				buf.WriteString("<klog.TextEncoder:Error:")
 				buf.WriteString(err.Error())
 				buf.WriteString(">")
@@ -294,23 +313,24 @@ func jsonEncodeFields(buf *Builder, fields []Field, depth int, timeFmt string) {
 	depth++
 	for _, field := range fields {
 		// Key
-		buf.AppendJSONString(field.Key)
+		buf.AppendJSONString(field.Key())
 		buf.WriteString(`:`)
 
+		var value interface{}
+		if s, ok := field.(FieldStack); ok {
+			value = s.Stack(depth)
+		} else {
+			value = field.Value()
+		}
+
 		// Value
-		switch v := field.Value.(type) {
+		switch v := value.(type) {
 		case time.Time:
 			buf.WriteByte('"')
 			encodeTime(buf, v, timeFmt)
 			buf.WriteByte('"')
-		case LazyerStack:
-			buf.AppendJSONString(v.Stack(depth))
-		case Lazyer:
-			if err := buf.AppendJSON(v.Lazy()); err != nil {
-				buf.AppendJSONString(fmt.Sprintf(`<klog.TextEncoder:Error:%s>`, err.Error()))
-			}
 		default:
-			if err := buf.AppendJSON(field.Value); err != nil {
+			if err := buf.AppendJSON(v); err != nil {
 				buf.AppendJSONString(fmt.Sprintf(`<klog.TextEncoder:Error:%s>`, err.Error()))
 			}
 		}

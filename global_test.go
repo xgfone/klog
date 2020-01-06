@@ -23,7 +23,7 @@ import (
 
 func TestDefaultLogger(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	log := WithEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl"))).WithCtx(F("caller", Caller()))
+	log := WithEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl"))).WithCtx(Caller("caller"))
 	SetDefaultLogger(log)
 	GetDefaultLogger().SetLevel(LvlInfo)
 	lvl1 := originLogger.ExtLogger.(*logger).level.String()
