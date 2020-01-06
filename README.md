@@ -23,7 +23,7 @@ package main
 import (
 	"os"
 
-	"github.com/xgfone/klog/v2"
+	"github.com/xgfone/klog/v3"
 )
 
 func main() {
@@ -74,7 +74,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/xgfone/klog/v2"
+	"github.com/xgfone/klog/v3"
 )
 
 func main() {
@@ -135,7 +135,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/xgfone/klog/v2"
+	"github.com/xgfone/klog/v3"
 )
 
 func main() {
