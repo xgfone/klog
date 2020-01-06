@@ -177,7 +177,7 @@ Go 1.13.4
 **Benchmark Package:**
 
 |               Function               |    ops    | ns/op | bytes/opt | allocs/op
-|--------------------------------------|-----------|- -----|-----------|----------
+|--------------------------------------|-----------|-------|-----------|----------
 |BenchmarkKlogNothingEncoder-4         | 194001346 |    6  |     0     |    0
 |BenchmarkKlogTextEncoder-4            |  42973323 |   24  |     0     |    0
 |BenchmarkKlogJSONEncoder-4            |  57550428 |   21  |     0     |    0
