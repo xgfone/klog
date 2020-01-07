@@ -20,50 +20,50 @@ import (
 	"github.com/go-stack/stack"
 )
 
-// FieldStack is used to get the stack of the caller.
-type FieldStack interface {
+// StackField is used to get the stack of the caller.
+type StackField interface {
 	Field
 	Stack(depth int) interface{}
 }
 
-// FieldStackFunc returns a new FieldStack.
-func FieldStackFunc(key string, getStack func(depth int) interface{}) FieldStack {
-	return fieldStack{key: key, stack: getStack}
+// StackFieldFunc returns a new StackField.
+func StackFieldFunc(key string, getStack func(depth int) interface{}) StackField {
+	return stackField{key: key, stack: getStack}
 }
 
-type fieldStack struct {
+type stackField struct {
 	key   string
 	stack func(depth int) interface{}
 }
 
-func (f fieldStack) Key() string                 { return f.key }
-func (f fieldStack) Value() interface{}          { panic("FieldStack.Value(): cannot be called") }
-func (f fieldStack) Stack(depth int) interface{} { return f.stack(depth + 1) }
+func (f stackField) Key() string                 { return f.key }
+func (f stackField) Value() interface{}          { panic("StackField.Value(): cannot be called") }
+func (f stackField) Stack(depth int) interface{} { return f.stack(depth + 1) }
 
-// Caller returns a FieldStack that returns the caller "file:line".
+// Caller returns a StackField that returns the caller "file:line".
 //
 // If fullPath is true, the file is the full path but removing the GOPATH prefix.
-func Caller(key string, fullPath ...bool) FieldStack {
+func Caller(key string, fullPath ...bool) StackField {
 	format := "%v"
 	if len(fullPath) > 0 && fullPath[0] {
 		format = "%+v"
 	}
 
-	return FieldStackFunc(key, func(depth int) interface{} {
+	return StackFieldFunc(key, func(depth int) interface{} {
 		return fmt.Sprintf(format, stack.Caller(depth+1))
 	})
 }
 
-// CallerStack returns a FieldStack returning the caller stack without runtime.
+// CallerStack returns a StackField returning the caller stack without runtime.
 //
 // If fullPath is true, the file is the full path but removing the GOPATH prefix.
-func CallerStack(key string, fullPath ...bool) FieldStack {
+func CallerStack(key string, fullPath ...bool) StackField {
 	format := "%v"
 	if len(fullPath) > 0 && fullPath[0] {
 		format = "%+v"
 	}
 
-	return FieldStackFunc(key, func(depth int) interface{} {
+	return StackFieldFunc(key, func(depth int) interface{} {
 		s := stack.Trace().TrimBelow(stack.Caller(depth + 1)).TrimRuntime()
 		if len(s) > 0 {
 			return fmt.Sprintf(format, s)

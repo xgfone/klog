@@ -230,7 +230,7 @@ func textEncodeFields(buf *Builder, fields []Field, depth int, quote bool, timeF
 		buf.WriteByte('=')
 
 		var value interface{}
-		if s, ok := field.(FieldStack); ok {
+		if s, ok := field.(StackField); ok {
 			value = s.Stack(depth)
 		} else {
 			value = field.Value()
@@ -315,7 +315,7 @@ func jsonEncodeFields(buf *Builder, fields []Field, depth int, timeFmt string) {
 		buf.WriteString(`:`)
 
 		var value interface{}
-		if s, ok := field.(FieldStack); ok {
+		if s, ok := field.(StackField); ok {
 			value = s.Stack(depth)
 		} else {
 			value = field.Value()
