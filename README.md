@@ -37,7 +37,7 @@ func main() {
 	log := klog.New("loggername").
 		WithEncoder(klog.TextEncoder(klog.SafeWriter(klog.StreamWriter(os.Stdout)), opts...)).
 		WithLevel(klog.LvlWarn).
-		WithCtx(klog.F("caller", klog.Caller()))
+		WithCtx(klog.Caller("caller"))
 
 	log.Log(klog.LvlInfo, "log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
 	log.Log(klog.LvlError, "log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
@@ -79,7 +79,7 @@ import (
 
 func main() {
 	// Initialize the default logger.
-	log := klog.WithLevel(klog.LvlWarn).WithCtx(klog.F("caller", klog.Caller()))
+	log := klog.WithLevel(klog.LvlWarn).WithCtx(klog.Caller("caller"))
 	klog.SetDefaultLogger(log)
 
 	// Emit the log with the fields.

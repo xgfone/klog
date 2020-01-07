@@ -37,7 +37,7 @@
 //
 //     func main() {
 //         // Initialize the default logger.
-//         log := klog.WithLevel(klog.LvlWarn).WithCtx(klog.F("caller", klog.Caller()))
+//         log := klog.WithLevel(klog.LvlWarn).WithCtx(klog.Caller("caller"))
 //         // if file, err := klog.FileWriter("file.log", "100M", 100); err == nil {
 //         //     log.Encoder().SetWriter(file)
 //         // } else {
