@@ -15,6 +15,7 @@
 package klog
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -101,6 +102,18 @@ func Warn(msg string, fields ...Field) { defaultLogger.Log(LvlWarn, msg, fields.
 // Error is equal to Log(LvlError, msg, field...).
 func Error(msg string, fields ...Field) { defaultLogger.Log(LvlError, msg, fields...) }
 
+// Panic is equal to Log(LvlCrit, msg, fields...), then panic.
+func Panic(msg string, fields ...Field) {
+	defaultLogger.Log(LvlCrit, msg, fields...)
+	panic(fmt.Errorf("%s: %s", LvlCrit.String(), msg))
+}
+
+// Fatal is equal to Log(LvlEmerg, msg, fields...), then call os.Exit(1) to exit.
+func Fatal(msg string, fields ...Field) {
+	defaultLogger.Log(LvlEmerg, msg, fields...)
+	os.Exit(1)
+}
+
 // Ef is equal to Kv("err", err).Log(LvlError, Sprintf(format, args...)).
 func Ef(err error, format string, args ...interface{}) {
 	defaultLogger.Log(LvlError, Sprintf(format, args...), F("err", err))
@@ -123,3 +136,17 @@ func Errorf(format string, args ...interface{}) { defaultLogger.Log(LvlError, Sp
 
 // Printf is equal to Infof(format, args...).
 func Printf(format string, args ...interface{}) { defaultLogger.Log(LvlInfo, Sprintf(format, args...)) }
+
+// Panicf is equal to Log(LvlCrit, Sprintf(format, args...)), then panic.
+func Panicf(format string, args ...interface{}) {
+	msg := Sprintf(format, args...)
+	defaultLogger.Log(LvlCrit, msg)
+	panic(fmt.Errorf("%s: %s", LvlCrit.String(), msg))
+}
+
+// Fatalf is equal to Log(LvlEmerg, Sprintf(format, args...)),
+// then call os.Exit(1) to exit.
+func Fatalf(format string, args ...interface{}) {
+	defaultLogger.Log(LvlEmerg, Sprintf(format, args...))
+	os.Exit(1)
+}
