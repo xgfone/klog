@@ -20,6 +20,22 @@ import (
 	"path/filepath"
 )
 
+// CallOnExit will be called before calling os.Exit(1) for Fatal or Fatalf.
+var CallOnExit []func()
+
+// RegisterCallOnExit adds the call function into CallOnExit.
+func RegisterCallOnExit(f func()) {
+	CallOnExit = append(CallOnExit, f)
+}
+
+func callOnExit() {
+	for _, f := range CallOnExit {
+		if f != nil {
+			f()
+		}
+	}
+}
+
 type originLoggerWrapper struct{ ExtLogger }
 
 func (o originLoggerWrapper) SetEncoder(enc Encoder) {
@@ -111,6 +127,7 @@ func Panic(msg string, fields ...Field) {
 // Fatal is equal to Log(LvlEmerg, msg, fields...), then call os.Exit(1) to exit.
 func Fatal(msg string, fields ...Field) {
 	defaultLogger.Log(LvlEmerg, msg, fields...)
+	callOnExit()
 	os.Exit(1)
 }
 
@@ -148,5 +165,6 @@ func Panicf(format string, args ...interface{}) {
 // then call os.Exit(1) to exit.
 func Fatalf(format string, args ...interface{}) {
 	defaultLogger.Log(LvlEmerg, Sprintf(format, args...))
+	callOnExit()
 	os.Exit(1)
 }
