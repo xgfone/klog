@@ -2,7 +2,7 @@
 
 Package `klog` provides an simple, flexible, extensible, powerful and structured logging tool based on the level, which has done the better balance between the flexibility and the performance. It is inspired by [log15](https://github.com/inconshreveable/log15), [logrus](https://github.com/sirupsen/logrus), [go-kit](https://github.com/go-kit/kit) and [zerolog](github.com/rs/zerolog).
 
-**API has been stable.** The current is `v3.x` and support Go `1.x`.
+**API has been stable.** The current is `v4.x` and support Go `1.7+`.
 
 
 ## Features
@@ -23,7 +23,7 @@ package main
 import (
 	"os"
 
-	"github.com/xgfone/klog/v3"
+	"github.com/xgfone/klog/v4"
 )
 
 func main() {
@@ -34,28 +34,28 @@ func main() {
 		klog.EncodeLogger("logger"),
 	}
 
-	log := klog.New("loggername").
+	log := klog.New("name").
 		WithEncoder(klog.TextEncoder(klog.SafeWriter(klog.StreamWriter(os.Stdout)), opts...)).
 		WithLevel(klog.LvlWarn).
 		WithCtx(klog.Caller("caller"))
 
-	log.Log(klog.LvlInfo, "log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
-	log.Log(klog.LvlError, "log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
+	log.Info("log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
+	log.Error("log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
 
 	// Output:
-	// t=1574056059 logger=loggername lvl=ERROR caller=main.go:23 key1=value1 key2=value2 msg="log msg"
+	// t=1601185879 logger=name lvl=ERROR caller=main.go:23 key1=value1 key2=value2 msg="log msg"
 }
 ```
 
 `klog` supplies the default global logger and some convenient functions based on the level:
 ```go
 // Emit the log with the fields.
-func Log(level Level, msg string, fields ...Field)
 func Trace(msg string, fields ...Field)
 func Debug(msg string, fields ...Field)
 func Info(msg string, fields ...Field)
 func Warn(msg string, fields ...Field)
 func Error(msg string, fields ...Field)
+func Fatal(msg string, fields ...Field)
 
 // Emit the log with the formatter.
 func Printf(format string, args ...interface{})
@@ -64,6 +64,7 @@ func Debugf(format string, args ...interface{})
 func Infof(format string, args ...interface{})
 func Warnf(format string, args ...interface{})
 func Errorf(format string, args ...interface{})
+func Fatalf(format string, args ...interface{})
 func Ef(err error, format string, args ...interface{})
 ```
 
@@ -74,13 +75,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/xgfone/klog/v3"
+	"github.com/xgfone/klog/v4"
 )
 
 func main() {
 	// Initialize the default logger.
-	log := klog.WithLevel(klog.LvlWarn).WithCtx(klog.Caller("caller"))
-	klog.SetDefaultLogger(log)
+	klog.DefalutLogger = klog.WithLevel(klog.LvlWarn).WithCtx(klog.Caller("caller"))
 
 	// Emit the log with the fields.
 	klog.Info("msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
@@ -92,9 +92,9 @@ func main() {
 	klog.Ef(fmt.Errorf("error"), "%s log msg", "errorf")
 
 	// Output:
-	// t=2019-11-18T14:01:08.7345586+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg="msg"
-	// t=2019-11-18T14:01:08.735969+08:00 lvl=ERROR caller=main.go:18 msg="errorf log msg"
-	// t=2019-11-18T14:01:08.7360115+08:00 lvl=ERROR caller=main.go:19 err=error msg="errorf log msg"
+	// t=2020-09-27T13:52:35.63282+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg=msg
+	// t=2020-09-27T13:52:35.64482+08:00 lvl=ERROR caller=main.go:19 msg="errorf log msg"
+	// t=2020-09-27T13:52:35.64482+08:00 lvl=ERROR caller=main.go:20 err=error msg="errorf log msg"
 }
 ```
 
@@ -114,7 +114,7 @@ type Encoder interface {
 }
 ```
 
-This pakcage has implemented four kinds of encoders, `NothingEncoder`, `TextEncoder`, `JSONEncoder`. It will use `TextEncoder` by default, but you can set it to others by `SetEncoder` or `WithEncoder`.
+This pakcage has implemented four kinds of encoders, `NothingEncoder`, `TextEncoder`, `JSONEncoder`. It will use `TextEncoder` by default.
 
 
 ### Writer
@@ -122,6 +122,7 @@ This pakcage has implemented four kinds of encoders, `NothingEncoder`, `TextEnco
 ```go
 type Writer interface {
 	Write(level Level, data []byte) (n int, err error)
+	io.Closer
 }
 ```
 
@@ -135,7 +136,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/xgfone/klog/v3"
+	"github.com/xgfone/klog/v4"
 )
 
 func main() {
@@ -146,15 +147,13 @@ func main() {
 	}
 	defer file.Close()
 
-	klog.GetEncoder().SetWriter(file)
+	klog.DefalutLogger.Encoder.SetWriter(file)
 	klog.Info("hello world", klog.F("key", "value"))
 
 	// Output to file test.log:
-	// t=2019-11-18T14:18:01.479374+08:00 lvl=INFO key=value msg="hello world"
+	// t=2020-09-27T13:56:04.0691608+08:00 lvl=INFO key=value msg="hello world"
 }
 ```
-
-You can use `WriterFunc` or `WriteCloserFunc` to implement the interface `Writer` or `WriteCloser`.
 
 
 ### Lazy evaluation
@@ -178,8 +177,8 @@ Go 1.13.4
 
 |               Function               |    ops    | ns/op | bytes/opt | allocs/op
 |--------------------------------------|-----------|-------|-----------|----------
-|BenchmarkKlogNothingEncoder-4         | 194001346 |    6  |     0     |    0
-|BenchmarkKlogTextEncoder-4            |  42973323 |   24  |     0     |    0
-|BenchmarkKlogJSONEncoder-4            |  57550428 |   21  |     0     |    0
-|BenchmarkKlogTextEncoder10CtxFields-4 |  10026812 |  107  |     0     |    0
-|BenchmarkKlogJSONEncoder10CtxFields-4 |   6574923 |  221  |     0     |    0
+|BenchmarkKlogNothingEncoder-4         | 273440714 | 4     |     0     |    0
+|BenchmarkKlogTextEncoder-4            |  30770728 | 43    |     0     |    0
+|BenchmarkKlogJSONEncoder-4            |  41626033 | 27    |     0     |    0
+|BenchmarkKlogTextEncoder10CtxFields-4 |  10344880 | 149   |     0     |    0
+|BenchmarkKlogJSONEncoder10CtxFields-4 |   7692381 | 165   |     0     |    0

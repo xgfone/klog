@@ -14,109 +14,28 @@
 
 package klog
 
-import (
-	"os"
-	"path/filepath"
-	"time"
-)
+// Field represents a key-value pair.
+type Field interface {
+	Key() string
+	Value() interface{}
+}
 
-// Logger is an logger interface to emit the log.
+// Logger is an logger interface based on the key-value pairs to emit the log.
 type Logger interface {
-	Log(level Level, msg string, fields ...Field)
+	Trace(msg string, fields ...Field)
+	Debug(msg string, fields ...Field)
+	Info(msg string, fields ...Field)
+	Warn(msg string, fields ...Field)
+	Error(msg string, fields ...Field)
+	Fatal(mst string, fields ...Field) // Log and exit with the code 1.
 }
 
-// ExtLogger is a extended logger interface.
-type ExtLogger interface {
-	Logger
-
-	SetLevel(level Level) // Reset the level
-	SetEncoder(Encoder)   // Reset the encoder
-	Encoder() Encoder     // Return the encoder of the logger
-
-	WithCtx(fields ...Field) ExtLogger // Return a new Logger with the fields
-	WithName(name string) ExtLogger    // Return a new Logger with the new name
-	WithLevel(level Level) ExtLogger   // Return a new Logger with the level
-	WithEncoder(e Encoder) ExtLogger   // Return a new Logger with the encoder
-	WithDepth(depth int) ExtLogger     // Return a new Logger with the increased depth
-}
-
-// GetEncoderFromLogger returns the encoder from logger if it has the method
-// `func Encoder() Encoder`. Or, it will return defaultEncoder if given or nil.
-func GetEncoderFromLogger(logger Logger, defaultEncoder ...Encoder) Encoder {
-	if l, ok := logger.(interface{ Encoder() Encoder }); ok {
-		return l.Encoder()
-	} else if len(defaultEncoder) > 0 {
-		return defaultEncoder[0]
-	}
-	return nil
-}
-
-type logger struct {
-	name    string
-	depth   int
-	level   Level
-	fields  []Field
-	encoder Encoder
-}
-
-// New creates a new ExtLogger, which will use TextEncoder as the encoder
-// and output the log to os.Stdout.
-func New(name string) ExtLogger {
-	w := SafeWriter(StreamWriter(os.Stdout))
-	e := TextEncoder(w, Quote(), EncodeLevel("lvl"), EncodeLogger("logger"), EncodeTime("t", time.RFC3339Nano))
-	return &logger{name: name, level: LvlDebug, encoder: e, depth: 1}
-}
-
-func (l *logger) clone() *logger {
-	return &logger{
-		name:    l.name,
-		depth:   l.depth,
-		level:   l.level,
-		fields:  l.fields,
-		encoder: l.encoder,
-	}
-}
-
-func (l *logger) Level() Level                    { return l.level }
-func (l *logger) Encoder() Encoder                { return l.encoder }
-func (l *logger) SetEncoder(enc Encoder)          { l.encoder = enc }
-func (l *logger) SetLevel(level Level)            { l.level = level }
-func (l *logger) WithName(name string) ExtLogger  { ll := l.clone(); ll.name = name; return ll }
-func (l *logger) WithLevel(level Level) ExtLogger { ll := l.clone(); ll.level = level; return ll }
-func (l *logger) WithEncoder(e Encoder) ExtLogger { ll := l.clone(); ll.encoder = e; return ll }
-func (l *logger) WithDepth(depth int) ExtLogger   { ll := l.clone(); ll.depth += depth; return ll }
-func (l *logger) WithCtx(fields ...Field) ExtLogger {
-	ll := l.clone()
-	ll.fields = append(ll.fields, fields...)
-	return ll
-}
-
-func (l *logger) IsEnabled(lvl Level) bool { return lvl.Priority() >= l.level.Priority() }
-func (l *logger) Log(lvl Level, msg string, fields ...Field) {
-	if l.IsEnabled(lvl) {
-		r := Record{
-			Name:  l.name,
-			Depth: l.depth,
-
-			Lvl:    lvl,
-			Msg:    msg,
-			Ctxs:   l.fields,
-			Fields: fields,
-		}
-		l.encoder.Encode(r)
-	}
-}
-
-// NewSimpleLogger returns a new simple logger.
-func NewSimpleLogger(name, level, filePath, fileSize string, fileNum int) (ExtLogger, error) {
-	log := New(name).WithLevel(NameToLevel(level))
-	if filePath != "" {
-		os.MkdirAll(filepath.Dir(filePath), 0755)
-		wc, err := FileWriter(filePath, fileSize, fileNum)
-		if err != nil {
-			return nil, err
-		}
-		log.Encoder().SetWriter(wc)
-	}
-	return log, nil
+// Loggerf is an logger interface based on the format string to emit the log.
+type Loggerf interface {
+	Tracef(msgfmt string, args ...interface{})
+	Debugf(msgfmt string, args ...interface{})
+	Infof(msgfmt string, args ...interface{})
+	Warnf(msgfmt string, args ...interface{})
+	Errorf(msgfmt string, args ...interface{})
+	Fatalf(msgfmt string, args ...interface{}) // Log and exit with the code 1.
 }

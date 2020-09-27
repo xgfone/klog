@@ -21,36 +21,6 @@ import (
 	"unicode"
 )
 
-// Field represents a key-value pair.
-type Field interface {
-	Key() string
-	Value() interface{}
-}
-
-type field struct {
-	key   string
-	value interface{}
-}
-
-func (f field) Key() string { return f.key }
-func (f field) Value() interface{} {
-	switch v := f.value.(type) {
-	case func() interface{}:
-		return v()
-	case func() string:
-		return v()
-	default:
-		return v
-	}
-}
-
-// E is equal to F("err", err).
-func E(err error) Field { return field{key: "err", value: err} }
-
-// F returns a new Field. If value is "func() interface{}" or "func() string",
-// it will be evaluated when the log is emitted, that's, it is lazy.
-func F(key string, value interface{}) Field { return field{key: key, value: value} }
-
 // Record represents a log record.
 type Record struct {
 	Name  string    // The logger name, which may be empty
@@ -91,15 +61,10 @@ type wrappedEncoder struct {
 }
 
 func (fre wrappedEncoder) Encode(r Record) {
-	if fre.level != nil && r.Lvl.Priority() < fre.level.Priority() {
-		return
+	if r.Lvl >= fre.level {
+		r.Depth++
+		fre.Encoder.Encode(fre.fixRecord(r))
 	}
-
-	r.Depth++
-	if fre.fixRecord != nil {
-		r = fre.fixRecord(r)
-	}
-	fre.Encoder.Encode(r)
 }
 
 // LevelEncoder returns a new Encoder, which will filter the log record
@@ -127,10 +92,6 @@ type encoderFunc struct {
 func (ef *encoderFunc) Writer() Writer     { return ef.writer }
 func (ef *encoderFunc) SetWriter(w Writer) { ef.writer = w }
 func (ef *encoderFunc) Encode(r Record) {
-	if ef.encode == nil {
-		return
-	}
-
 	r.Depth++
 	buf := getBuilder()
 	ef.encode(buf, r)
@@ -200,8 +161,14 @@ func Newline(newline bool) EncoderOption {
 
 //////////////////////////////////////////////////////////////////////////////
 
+type nothingEncoder struct{ w Writer }
+
+func (e nothingEncoder) Writer() Writer     { return e.w }
+func (e nothingEncoder) SetWriter(w Writer) { e.w = w }
+func (e nothingEncoder) Encode(Record)      {}
+
 // NothingEncoder encodes nothing.
-func NothingEncoder() Encoder { return &encoderFunc{} }
+func NothingEncoder() Encoder { return nothingEncoder{} }
 
 func appendString(buf *Builder, s string, quote bool) {
 	if quote && strings.IndexFunc(s, unicode.IsSpace) > -1 {

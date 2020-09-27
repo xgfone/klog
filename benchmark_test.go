@@ -23,7 +23,7 @@ func BenchmarkKlogNothingEncoder(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Log(LvlInfo, "message")
+			logger.Info("message")
 		}
 	})
 }
@@ -35,7 +35,7 @@ func BenchmarkKlogTextEncoder(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Log(LvlInfo, "message")
+			logger.Info("message")
 		}
 	})
 }
@@ -47,7 +47,7 @@ func BenchmarkKlogJSONEncoder(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Log(LvlInfo, "message")
+			logger.Info("message")
 		}
 	})
 }
@@ -61,7 +61,7 @@ func BenchmarkKlogTextEncoder10CtxFields(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Log(LvlInfo, "message")
+			logger.Info("message")
 		}
 	})
 }
@@ -75,7 +75,7 @@ func BenchmarkKlogJSONEncoder10CtxFields(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Log(LvlInfo, "message")
+			logger.Info("message")
 		}
 	})
 }

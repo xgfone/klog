@@ -14,12 +14,6 @@
 
 package klog
 
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-)
-
 // CallOnExit will be called before calling os.Exit(1) for Fatal or Fatalf.
 var CallOnExit []func()
 
@@ -36,135 +30,64 @@ func callOnExit() {
 	}
 }
 
-type originLoggerWrapper struct{ ExtLogger }
+// DefalutLogger is the default global logger.
+var DefalutLogger = New("")
 
-func (o originLoggerWrapper) SetEncoder(enc Encoder) {
-	o.ExtLogger.SetEncoder(enc)
-	defaultLogger.SetEncoder(enc)
-}
-func (o originLoggerWrapper) SetLevel(lvl Level) {
-	o.ExtLogger.SetLevel(lvl)
-	defaultLogger.SetLevel(lvl)
-}
+// WithCtx is equal to DefalutLogger.WithCtx(fields...).
+func WithCtx(fields ...Field) *ExtLogger { return DefalutLogger.WithCtx(fields...) }
 
-var defaultLogger ExtLogger
-var originLogger originLoggerWrapper
+// WithName is equal to DefalutLogger.WithName(name).
+func WithName(name string) *ExtLogger { return DefalutLogger.WithName(name) }
 
-func init() { SetDefaultLogger(New("")) }
+// WithLevel is equal to DefalutLogger.WithLevel(level).
+func WithLevel(level Level) *ExtLogger { return DefalutLogger.WithLevel(level) }
 
-// UpdateDefaultLogger updates the default logger with NameToLevel(level)
-// and FileWriter(filePath, fileSize, fileNum) if filePath is not "".
-func UpdateDefaultLogger(level, filePath, fileSize string, fileNum int) error {
-	if filePath != "" {
-		os.MkdirAll(filepath.Dir(filePath), 0755)
-		wc, err := FileWriter(filePath, fileSize, fileNum)
-		if err != nil {
-			return err
-		}
-		GetEncoder().SetWriter(wc)
-	}
-	SetLevel(NameToLevel(level))
-	return nil
-}
+// WithEncoder is equal to DefalutLogger.WithEncoder(enc).
+func WithEncoder(enc Encoder) *ExtLogger { return DefalutLogger.WithEncoder(enc) }
 
-// GetDefaultLogger returns the default logger.
-func GetDefaultLogger() ExtLogger { return originLogger }
+// WithDepth is equal to DefalutLogger.WithDepth(depth).
+func WithDepth(depth int) *ExtLogger { return DefalutLogger.WithDepth(depth) }
 
-// SetDefaultLogger sets the default logger to l.
-func SetDefaultLogger(l ExtLogger) {
-	originLogger = originLoggerWrapper{l}
-	defaultLogger = l.WithDepth(1)
-}
+// Trace is equal to DefalutLogger.Trace(msg, fields...).
+func Trace(msg string, fields ...Field) { DefalutLogger.Log(LvlTrace, 1, msg, nil, fields) }
 
-// GetEncoder returns the encoder of the default logger.
-func GetEncoder() Encoder { return defaultLogger.Encoder() }
+// Debug is equal to DefalutLogger.Debug(msg, fields...).
+func Debug(msg string, fields ...Field) { DefalutLogger.Log(LvlDebug, 1, msg, nil, fields) }
 
-// SetEncoder resets the encoder of the default logger, which is TextEncoder by default.
-func SetEncoder(enc Encoder) { originLogger.SetEncoder(enc) }
+// Info is equal to DefalutLogger.Info(msg, fields...).
+func Info(msg string, fields ...Field) { DefalutLogger.Log(LvlInfo, 1, msg, nil, fields) }
 
-// SetLevel resets the level of the default logger, which is LvlDebug by default.
-func SetLevel(lvl Level) { originLogger.SetLevel(lvl) }
+// Warn is equal to DefalutLogger.Warn(msg, fields...).
+func Warn(msg string, fields ...Field) { DefalutLogger.Log(LvlWarn, 1, msg, nil, fields) }
 
-// WithCtx returns a new ExtLogger based on the default logger with the fields.
-func WithCtx(fields ...Field) ExtLogger { return originLogger.WithCtx(fields...) }
+// Error is equal to DefalutLogger.Error(msg, fields...).
+func Error(msg string, fields ...Field) { DefalutLogger.Log(LvlError, 1, msg, nil, fields) }
 
-// WithName returns a new ExtLogger based on the default logger with the name.
-func WithName(name string) ExtLogger { return originLogger.WithName(name) }
+// Fatal is equal to DefalutLogger.Fatal(msg, fields...).
+func Fatal(msg string, fields ...Field) { DefalutLogger.Log(LvlFatal, 1, msg, nil, fields) }
 
-// WithLevel returns a new ExtLogger based on the default logger with the level.
-func WithLevel(level Level) ExtLogger { return originLogger.WithLevel(level) }
+// Tracef is equal to DefalutLogger.Tracef(msg, args...).
+func Tracef(msg string, args ...interface{}) { DefalutLogger.Log(LvlTrace, 1, msg, args, nil) }
 
-// WithEncoder returns a new ExtLogger based on the default logger with the encoder.
-func WithEncoder(enc Encoder) ExtLogger { return originLogger.WithEncoder(enc) }
+// Debugf is equal to DefalutLogger.Debugf(msg, args...).
+func Debugf(msg string, args ...interface{}) { DefalutLogger.Log(LvlDebug, 1, msg, args, nil) }
 
-// WithDepth returns a new ExtLogger based on the default logger with the depth.
-func WithDepth(depth int) ExtLogger { return originLogger.WithDepth(depth) }
+// Infof is equal to DefalutLogger.Infof(msg, args...).
+func Infof(msg string, args ...interface{}) { DefalutLogger.Log(LvlInfo, 1, msg, args, nil) }
 
-// Log emits the log with the level by the default logger.
-func Log(level Level, msg string, fields ...Field) { defaultLogger.Log(level, msg, fields...) }
+// Warnf is equal to DefalutLogger.Warnf(msg, args...).
+func Warnf(msg string, args ...interface{}) { DefalutLogger.Log(LvlWarn, 1, msg, args, nil) }
 
-// Trace is equal to Log(LvlTrace, msg, field...).
-func Trace(msg string, fields ...Field) { defaultLogger.Log(LvlTrace, msg, fields...) }
+// Errorf is equal to DefalutLogger.Errorf(msg, args...).
+func Errorf(msg string, args ...interface{}) { DefalutLogger.Log(LvlError, 1, msg, args, nil) }
 
-// Debug is equal to Log(LvlDebug, msg, field...).
-func Debug(msg string, fields ...Field) { defaultLogger.Log(LvlDebug, msg, fields...) }
+// Fatalf is equal to DefalutLogger.Fatalf(msg, args...).
+func Fatalf(msg string, args ...interface{}) { DefalutLogger.Log(LvlFatal, 1, msg, args, nil) }
 
-// Info is equal to Log(LvlInfo, msg, field...).
-func Info(msg string, fields ...Field) { defaultLogger.Log(LvlInfo, msg, fields...) }
+// Printf is equal to DefalutLogger.Infof(msg, args...).
+func Printf(msg string, args ...interface{}) { DefalutLogger.Log(LvlInfo, 1, msg, args, nil) }
 
-// Warn is equal to Log(LvlWarn, msg, field...).
-func Warn(msg string, fields ...Field) { defaultLogger.Log(LvlWarn, msg, fields...) }
-
-// Error is equal to Log(LvlError, msg, field...).
-func Error(msg string, fields ...Field) { defaultLogger.Log(LvlError, msg, fields...) }
-
-// Panic is equal to Log(LvlCrit, msg, fields...), then panic.
-func Panic(msg string, fields ...Field) {
-	defaultLogger.Log(LvlCrit, msg, fields...)
-	panic(fmt.Errorf("%s: %s", LvlCrit.String(), msg))
-}
-
-// Fatal is equal to Log(LvlEmerg, msg, fields...), then call os.Exit(1) to exit.
-func Fatal(msg string, fields ...Field) {
-	defaultLogger.Log(LvlEmerg, msg, fields...)
-	callOnExit()
-	os.Exit(1)
-}
-
-// Ef is equal to Kv("err", err).Log(LvlError, Sprintf(format, args...)).
+// Ef is equal to DefalutLogger.Error(fmt.Sprintf(msg, args), E(err)).
 func Ef(err error, format string, args ...interface{}) {
-	defaultLogger.Log(LvlError, Sprintf(format, args...), F("err", err))
-}
-
-// Tracef is equal to Log(LvlTrace, Sprintf(format, args...)).
-func Tracef(format string, args ...interface{}) { defaultLogger.Log(LvlTrace, Sprintf(format, args...)) }
-
-// Debugf is equal to Log(LvlDebug, Sprintf(format, args...)).
-func Debugf(format string, args ...interface{}) { defaultLogger.Log(LvlDebug, Sprintf(format, args...)) }
-
-// Infof is equal to Log(LvlInfo, Sprintf(format, args...)).
-func Infof(format string, args ...interface{}) { defaultLogger.Log(LvlInfo, Sprintf(format, args...)) }
-
-// Warnf is equal to Log(LvlWarn, Sprintf(format, args...)).
-func Warnf(format string, args ...interface{}) { defaultLogger.Log(LvlWarn, Sprintf(format, args...)) }
-
-// Errorf is equal to Log(LvlError, Sprintf(format, args...)).
-func Errorf(format string, args ...interface{}) { defaultLogger.Log(LvlError, Sprintf(format, args...)) }
-
-// Printf is equal to Infof(format, args...).
-func Printf(format string, args ...interface{}) { defaultLogger.Log(LvlInfo, Sprintf(format, args...)) }
-
-// Panicf is equal to Log(LvlCrit, Sprintf(format, args...)), then panic.
-func Panicf(format string, args ...interface{}) {
-	msg := Sprintf(format, args...)
-	defaultLogger.Log(LvlCrit, msg)
-	panic(fmt.Errorf("%s: %s", LvlCrit.String(), msg))
-}
-
-// Fatalf is equal to Log(LvlEmerg, Sprintf(format, args...)),
-// then call os.Exit(1) to exit.
-func Fatalf(format string, args ...interface{}) {
-	defaultLogger.Log(LvlEmerg, Sprintf(format, args...))
-	callOnExit()
-	os.Exit(1)
+	DefalutLogger.Log(LvlError, 1, format, args, []Field{E(err)})
 }

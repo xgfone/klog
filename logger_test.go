@@ -16,17 +16,16 @@ package klog
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 )
 
 func TestLoggerTextEncoder(t *testing.T) {
 	buf := NewBuilder(128)
 	logger := New("").WithCtx(Caller("caller1"))
-	logger.SetEncoder(TextEncoder(StreamWriter(buf), Quote(), EncodeLevel("lvl")))
+	logger.Encoder = TextEncoder(StreamWriter(buf), Quote(), EncodeLevel("lvl"))
 
-	logger.Log(LvlInfo, "test logger", Caller("caller2"))
-	if buf.String() != "lvl=INFO caller1=logger_test.go:28 caller2=logger_test.go:28 msg=\"test logger\"\n" {
+	logger.Info("test logger", Caller("caller2"))
+	if buf.String() != "lvl=INFO caller1=logger_test.go:27 caller2=logger_test.go:27 msg=\"test logger\"\n" {
 		t.Error(buf.String())
 	}
 }
@@ -34,10 +33,10 @@ func TestLoggerTextEncoder(t *testing.T) {
 func TestLoggerJSONEncoder(t *testing.T) {
 	buf := NewBuilder(128)
 	logger := New("").WithCtx(Caller("caller1"), F("key1", `value1"`))
-	logger.SetEncoder(JSONEncoder(StreamWriter(buf), EncodeLevel("lvl")))
-	logger.Log(LvlInfo, "test json encoder", F("key2", 123))
+	logger.Encoder = JSONEncoder(StreamWriter(buf), EncodeLevel("lvl"))
+	logger.Info("test json encoder", F("key2", 123))
 
-	expect := `{"lvl":"INFO","caller1":"logger_test.go:38","key1":"value1\"","key2":123,"msg":"test json encoder"}` + "\n"
+	expect := `{"lvl":"INFO","caller1":"logger_test.go:37","key1":"value1\"","key2":123,"msg":"test json encoder"}` + "\n"
 	if buf.String() != expect {
 		t.Error(buf.String())
 	}
@@ -47,24 +46,5 @@ func TestLoggerJSONEncoder(t *testing.T) {
 		t.Errorf("%s: %v", buf.String(), err)
 	} else if v, ok := ms["key1"].(string); !ok || v != `value1"` {
 		t.Error(v)
-	}
-}
-
-func TestLoggerIsEnabled(t *testing.T) {
-	buf := NewBuilder(128)
-	logger := New("").WithLevel(LvlInfo)
-	logger.SetEncoder(TextEncoder(StreamWriter(buf), EncodeLevel("lvl")))
-
-	if logger.(interface{ IsEnabled(Level) bool }).IsEnabled(LvlDebug) {
-		logger.Log(LvlDebug, "debug")
-	}
-	if logger.(interface{ IsEnabled(Level) bool }).IsEnabled(LvlInfo) {
-		logger.Log(LvlInfo, "info")
-	}
-
-	if output := buf.String(); strings.Contains(output, "debug") {
-		t.Error(output)
-	} else if !strings.Contains(output, "info") {
-		t.Error(output)
 	}
 }

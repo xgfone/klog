@@ -54,7 +54,7 @@ func (s syslogWriter) Close() error {
 
 // SyslogWriter opens a connection to the system syslog daemon
 // by calling syslog.New and writes all logs to it.
-func SyslogWriter(priority syslog.Priority, tag string) (WriteCloser, error) {
+func SyslogWriter(priority syslog.Priority, tag string) (Writer, error) {
 	w, err := syslog.New(priority, tag)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func SyslogWriter(priority syslog.Priority, tag string) (WriteCloser, error) {
 
 // SyslogNetWriter opens a connection to a log daemon over the network
 // and writes all logs to it.
-func SyslogNetWriter(net, addr string, priority syslog.Priority, tag string) (WriteCloser, error) {
+func SyslogNetWriter(net, addr string, priority syslog.Priority, tag string) (Writer, error) {
 	w, err := syslog.Dial(net, addr, priority, tag)
 	if err != nil {
 		return nil, err

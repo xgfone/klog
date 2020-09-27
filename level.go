@@ -16,86 +16,68 @@ package klog
 
 import (
 	"fmt"
-	"io"
-	"math"
 	"strings"
 )
 
 // Predefine some levels.
-var (
-	LvlTrace = NewLevel("TRACE", 0)
-	LvlDebug = NewLevel("DEBUG", 100)
-	LvlInfo  = NewLevel("INFO", 200)
-	LvlWarn  = NewLevel("WARN", 300)
-	LvlError = NewLevel("ERROR", 400)
-	LvlCrit  = NewLevel("CRIT", 500)
-	LvlEmerg = NewLevel("EMERG", 600)
-	LvlMax   = NewLevel("MAX", math.MaxInt32)
+const (
+	LvlTrace Level = iota
+	LvlDebug
+	LvlInfo
+	LvlWarn
+	LvlError
+	LvlFatal
 )
 
-// Level represents the logger level.
-type Level interface {
-	// Priority returns the priority of the level.
-	// The bigger the level, the higher the priority.
-	Priority() int
+// Level is the level of the log.
+type Level uint8
 
-	// String returns the name of the level.
-	String() string
+func (l Level) String() string {
+	switch l {
+	case LvlTrace:
+		return "TRACE"
+	case LvlDebug:
+		return "DEBUG"
+	case LvlInfo:
+		return "INFO"
+	case LvlWarn:
+		return "WARN"
+	case LvlError:
+		return "ERROR"
+	case LvlFatal:
+		return "FATAL"
+	default:
+		return "Unknown"
+	}
 }
 
-func levelIsLess(lvl1, lvl2 Level) bool {
-	return lvl1.Priority() < lvl2.Priority()
-}
-
-// NewLevel returns a new level, which has also implemented the interface
-// io.WriterTo.
-func NewLevel(name string, priority int) Level {
-	return namedLevel{name: name, prio: priority}
-}
-
-type namedLevel struct {
-	name string
-	prio int
-}
-
-func (l namedLevel) String() string {
-	return l.name
-}
-
-func (l namedLevel) Priority() int {
-	return l.prio
-}
-
-func (l namedLevel) WriteTo(w io.Writer) (int64, error) {
-	n, err := io.WriteString(w, l.name)
-	return int64(n), err
-}
-
-// Levels is a set of Level, which is used to get the level by the name.
-var Levels = map[string]Level{
-	"TRACE": LvlTrace,
-	"DEBUG": LvlDebug,
-	"INFO":  LvlInfo,
-	"WARN":  LvlWarn,
-	"ERROR": LvlError,
-	"CRIT":  LvlCrit,
-	"EMERG": LvlEmerg,
-	"MAX":   LvlMax,
-}
-
-// NameToLevel returns the Level by the name, which is case Insensitive.
+// NameToLevel returns a Level by the level name.
 //
-// If not panic, it will return `LvlInfo` instead if no level named `name`.
-func NameToLevel(name string, defaultPanic ...bool) Level {
-	for n, lvl := range Levels {
-		if strings.ToUpper(n) == strings.ToUpper(name) {
-			return lvl
+// Support the level name, which is case insensitive:
+//   TRACE
+//   DEBUG
+//   INFO
+//   WARN
+//   ERROR
+//   FATAL
+func NameToLevel(level string, defaultLevel ...Level) Level {
+	switch strings.ToUpper(level) {
+	case "TRACE":
+		return LvlTrace
+	case "DEBUG":
+		return LvlDebug
+	case "INFO":
+		return LvlInfo
+	case "WARN":
+		return LvlWarn
+	case "ERROR":
+		return LvlError
+	case "FATAL":
+		return LvlFatal
+	default:
+		if len(defaultLevel) > 0 {
+			return defaultLevel[0]
 		}
+		panic(fmt.Errorf("unknown level '%s'", level))
 	}
-
-	if len(defaultPanic) > 0 && defaultPanic[0] {
-		panic(fmt.Errorf("unknown level name '%s'", name))
-	}
-
-	return LvlInfo
 }

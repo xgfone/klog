@@ -30,208 +30,106 @@ var fileFlag = os.O_CREATE | os.O_APPEND | os.O_WRONLY
 // Writer is the interface to write the log to the underlying storage.
 type Writer interface {
 	Write(level Level, data []byte) (n int, err error)
-}
-
-// WriteCloser is the union of Writer and io.Closer.
-type WriteCloser interface {
-	Writer
 	io.Closer
 }
 
-// WriteFlushCloser is the union of WriteCloser and Flusher.
-type WriteFlushCloser interface {
-	WriteCloser
-	Flush() error
+type writerFunc struct {
+	write func(Level, []byte) (int, error)
+	close func() error
+}
+
+func (w writerFunc) Write(l Level, p []byte) (int, error) { return w.write(l, p) }
+func (w writerFunc) Close() error                         { return w.close() }
+
+// WriterFunc adapts the function to Writer.
+func WriterFunc(write func(Level, []byte) (int, error), close ...func() error) Writer {
+	closer := func() error { return nil }
+	if len(close) != 0 {
+		closer = close[0]
+	}
+	return writerFunc{write, closer}
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type ioWriter struct {
-	w Writer
+	Writer
 }
 
-// Writer implements io.Writer.
 func (w ioWriter) Write(p []byte) (int, error) {
-	return w.w.Write(LvlMax, p)
-}
-
-// Flush implements the interface { Flush() error }.
-func (w ioWriter) Flush() error {
-	if f := getFlush(w.w); f != nil {
-		return f()
-	}
-	return nil
-}
-
-// Close implements io.Closer.
-func (w ioWriter) Close() error {
-	if c := getClose(w.w); c != nil {
-		return c()
-	}
-	return nil
+	return w.Writer.Write(LvlFatal, p)
 }
 
 // ToIOWriter converts Writer to io.WriteCloser.
 func ToIOWriter(w Writer) io.WriteCloser {
-	return ioWriter{w: w}
+	return ioWriter{Writer: w}
 }
 
-//////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
 
-type writer struct {
-	write func(Level, []byte) (int, error)
-	flush func() error
-	close func() error
+type streamWriter struct {
+	io.Writer
 }
 
-func (w writer) Write(l Level, p []byte) (int, error) { return w.write(l, p) }
-func (w writer) Close() error                         { return w.exec(w.close) }
-func (w writer) Flush() error                         { return w.exec(w.flush) }
-func (w writer) exec(f func() error) error {
-	if f != nil {
-		return f()
+func (w streamWriter) Write(l Level, p []byte) (int, error) { return w.Writer.Write(p) }
+func (w streamWriter) Close() (err error) {
+	if c, ok := w.Writer.(io.Closer); ok {
+		err = c.Close()
 	}
-	return nil
+	return
 }
 
-func getClose(v interface{}) func() error {
-	if w, ok := v.(ioWriter); ok {
-		v = w.w
-	}
-
-	if w, ok := v.(writer); ok {
-		return w.close
-	} else if c, ok := v.(io.Closer); ok {
-		return c.Close
-	}
-	return nil
+// StreamWriter converts io.Writer to WriteCloser.
+func StreamWriter(w io.Writer) Writer {
+	return streamWriter{w}
 }
 
-func getFlush(v interface{}) func() error {
-	if w, ok := v.(ioWriter); ok {
-		v = w.w
-	}
-
-	if w, ok := v.(writer); ok {
-		return w.flush
-	} else if f, ok := v.(interface{ Flush() error }); ok {
-		return f.Flush
-	}
-	return nil
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-// WriterFunc adapts the function to Writer.
-func WriterFunc(f func(Level, []byte) (int, error)) Writer {
-	return writer{write: f}
-}
-
-// WriteCloserFunc adapts the write and close function to WriteCloser.
-//
-// close may be nil, which will do nothing when calling the Close method.
-func WriteCloserFunc(write func(Level, []byte) (int, error), close func() error) WriteCloser {
-	return writer{write: write, close: close}
-}
-
-// WriteFlushCloserFunc adapts the write, flush and close function to WriteFlushCloser.
-//
-// flush and close may be nil, which will do nothing when calling the Flush
-// or Close method.
-func WriteFlushCloserFunc(write func(Level, []byte) (int, error), flush, close func() error) WriteFlushCloser {
-	return writer{write: write, flush: flush, close: close}
-}
-
-// ToWriteCloser converts Writer to WriteCloser.
-//
-// If the writer has no the method Close, it does nothing.
-func ToWriteCloser(w Writer) WriteCloser {
-	return writer{write: w.Write, close: getClose(w)}
-}
-
-// ToWriteFlushCloser converts the Writer to WriteFlushCloser.
-//
-// If the writer has no the methods Close and Flush, they do nothing.
-func ToWriteFlushCloser(w Writer) WriteFlushCloser {
-	return writer{write: w.Write, flush: getFlush(w), close: getClose(w)}
-}
-
-func flushAllWriters(writers ...Writer) error {
-	for _, w := range writers {
-		if f, ok := w.(interface{ Flush() error }); ok {
-			f.Flush()
-		}
-	}
-	return nil
-}
-
-func closeAllWriters(writers ...Writer) error {
-	for _, w := range writers {
-		if c, ok := w.(io.Closer); ok {
-			c.Close()
-		}
-	}
-	return nil
-}
-
-//////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
 
 // DiscardWriter discards all the data.
-func DiscardWriter() WriteFlushCloser {
-	return WriteFlushCloserFunc(func(Level, []byte) (int, error) { return 0, nil }, nil, nil)
+func DiscardWriter() Writer {
+	return WriterFunc(func(Level, []byte) (int, error) { return 0, nil })
 }
 
 // LevelWriter filters the logs whose level is less than lvl.
-func LevelWriter(lvl Level, w Writer) WriteFlushCloser {
-	return WriteFlushCloserFunc(func(level Level, p []byte) (int, error) {
-		if level.Priority() < lvl.Priority() {
-			return 0, nil
+func LevelWriter(lvl Level, w Writer) Writer {
+	return WriterFunc(func(level Level, p []byte) (n int, err error) {
+		if level >= lvl {
+			n, err = w.Write(level, p)
 		}
-		return w.Write(level, p)
-	}, getFlush(w), getClose(w))
+		return
+	}, w.Close)
 }
 
 // SafeWriter is guaranteed that only a single writing operation can proceed
 // at a time.
 //
 // It's necessary for thread-safe concurrent writes.
-func SafeWriter(w Writer) WriteFlushCloser {
+func SafeWriter(w Writer) Writer {
 	var mu sync.Mutex
-	return WriteFlushCloserFunc(func(level Level, p []byte) (int, error) {
+	return WriterFunc(func(level Level, p []byte) (int, error) {
 		mu.Lock()
 		defer mu.Unlock()
 		return w.Write(level, p)
-	}, getFlush(w), getClose(w))
+	}, w.Close)
 }
 
-// StreamWriter converts io.Writer to Writer.
-func StreamWriter(w io.Writer) WriteFlushCloser {
-	return WriteFlushCloserFunc(func(level Level, p []byte) (int, error) {
-		return w.Write(p)
-	}, getFlush(w), getClose(w))
-}
-
-// BufferWriter returns a new WriteFlushCloser to write all logs to a buffer
+// BufferWriter returns a new Writer to write all logs to a buffer
 // which flushes into the wrapped writer whenever it is available for writing.
-//
-// It uses SafeWriter to write all logs to the buffer thread-safely.
-// So the first argument w may not be thread-safe.
-func BufferWriter(w Writer, bufferSize int) WriteFlushCloser {
+func BufferWriter(w Writer, bufferSize int) Writer {
 	bw := bufio.NewWriterSize(ToIOWriter(w), bufferSize)
-	sw := SafeWriter(StreamWriter(bw))
-	return WriteFlushCloserFunc(sw.Write, bw.Flush, getClose(w))
+	sw := StreamWriter(bw)
+	return WriterFunc(sw.Write, func() error { bw.Flush(); return w.Close() })
 }
 
 // NetWriter opens a socket to the given address and writes the log
 // over the connection.
-//
-// Notice: it will be wrapped by SafeWriter, so it's thread-safe.
-func NetWriter(network, addr string) (WriteFlushCloser, error) {
+func NetWriter(network, addr string) (Writer, error) {
 	conn, err := net.Dial(network, addr)
 	if err != nil {
 		return nil, err
 	}
-	return ToWriteFlushCloser(SafeWriter(StreamWriter(conn))), nil
+	return StreamWriter(conn), nil
 }
 
 // FailoverWriter writes all log records to the first writer specified,
@@ -241,33 +139,32 @@ func NetWriter(network, addr string) (WriteFlushCloser, error) {
 // For example, you might want to log to a network socket, but failover to
 // writing to a file if the network fails, and then to standard out
 // if the file write fails.
-func FailoverWriter(writers ...Writer) WriteFlushCloser {
-	return WriteFlushCloserFunc(func(level Level, p []byte) (n int, err error) {
-		for _, w := range writers {
-			if n, err = w.Write(level, p); err == nil {
+func FailoverWriter(writers ...Writer) Writer {
+	_len := len(writers)
+	return WriterFunc(func(level Level, p []byte) (n int, err error) {
+		for i := 0; i < _len; i++ {
+			if n, err = writers[i].Write(level, p); err == nil {
 				return
 			}
 		}
 		return
-	},
-		func() error { return flushAllWriters(writers...) },
-		func() error { return closeAllWriters(writers...) })
+	}, func() error {
+		for i := 0; i < _len; i++ {
+			writers[i].Close()
+		}
+		return nil
+	})
 }
 
 // SplitWriter returns a level-separated writer, which will write the log record
 // into the separated writer.
-func SplitWriter(getWriter func(Level) Writer, flush ...func() error) WriteFlushCloser {
-	var flusher func() error
-	if len(flush) > 0 {
-		flusher = flush[0]
-	}
-
-	return WriteFlushCloserFunc(func(level Level, p []byte) (n int, err error) {
+func SplitWriter(getWriter func(Level) Writer) Writer {
+	return WriterFunc(func(level Level, p []byte) (n int, err error) {
 		if w := getWriter(level); w != nil {
 			n, err = w.Write(level, p)
 		}
 		return
-	}, flusher, nil)
+	}, nil)
 }
 
 // FileWriter returns a writer based the file, which uses NewSizedRotatingFile
@@ -282,63 +179,33 @@ func SplitWriter(getWriter func(Level) Writer, flush ...func() error) WriteFlush
 //
 // Notice: if the directory in where filename is does not exist, it will be
 // created automatically.
-func FileWriter(filename, filesize string, filenum int) (WriteFlushCloser, error) {
-	return fileWriter(filename, filesize, filenum, true)
+func FileWriter(filename, filesize string, filenum int) (Writer, error) {
+	var w io.WriteCloser = os.Stdout
+	if filename != "" {
+		if filesize == "" {
+			filesize = "100M"
+		}
+
+		size, err := ParseSize(filesize)
+		if err != nil {
+			return nil, err
+		} else if filenum < 1 {
+			filenum = 100
+		}
+
+		os.MkdirAll(filepath.Dir(filename), 0755)
+		if w, err = NewSizedRotatingFile(filename, int(size), filenum); err != nil {
+			return nil, err
+		}
+	}
+
+	return SafeWriter(StreamWriter(w)), nil
 }
 
-// FileWriterWithoutLock is the same as FileWriter, but not use the lock
-// to ensure that it's thread-safe to write the log.
-func FileWriterWithoutLock(filename, filesize string, filenum int) (WriteFlushCloser, error) {
-	return fileWriter(filename, filesize, filenum, false)
-}
-
-func fileWriter(filename, filesize string, filenum int,
-	lock bool) (WriteFlushCloser, error) {
-	if filename == "" {
-		return ToWriteFlushCloser(SafeWriter(StreamWriter(os.Stdout))), nil
-	}
-
-	if filesize == "" {
-		filesize = "100M"
-	}
-	size, err := ParseSize(filesize)
-	if err != nil {
-		return nil, err
-	} else if filenum < 1 {
-		filenum = 100
-	}
-
-	os.MkdirAll(filepath.Dir(filename), 0755)
-	var file *SizedRotatingFile
-	if lock {
-		file, err = NewSizedRotatingFile(filename, int(size), filenum)
-	} else {
-		file, err = NewSizedRotatingFileWithoutLock(filename, int(size), filenum)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return ToWriteFlushCloser(StreamWriter(file)), nil
-}
-
-// NewSizedRotatingFile returns a new SizedRotatingFile.
-//
-// It is thread-safe for concurrent writes.
+// NewSizedRotatingFile returns a new SizedRotatingFile, which is not thread-safe.
 //
 // The default permission of the log file is 0644.
 func NewSizedRotatingFile(filename string, size, count int,
-	mode ...os.FileMode) (*SizedRotatingFile, error) {
-	return newSizedRotatingFile(filename, size, count, true, mode...)
-}
-
-// NewSizedRotatingFileWithoutLock is equal to NewSizedRotatingFile,
-// But not use the lock to ensure that it's thread-safe to write the log.
-func NewSizedRotatingFileWithoutLock(filename string, size, count int,
-	mode ...os.FileMode) (*SizedRotatingFile, error) {
-	return newSizedRotatingFile(filename, size, count, false, mode...)
-}
-
-func newSizedRotatingFile(filename string, size, count int, lock bool,
 	mode ...os.FileMode) (*SizedRotatingFile, error) {
 	var _mode os.FileMode = 0644
 	if len(mode) > 0 && mode[0] > 0 {
@@ -352,10 +219,6 @@ func newSizedRotatingFile(filename string, size, count int, lock bool,
 		backupCount: count,
 	}
 
-	if lock {
-		w.lock = new(sync.Mutex)
-	}
-
 	if err := w.open(); err != nil {
 		return nil, err
 	}
@@ -364,9 +227,7 @@ func newSizedRotatingFile(filename string, size, count int, lock bool,
 
 // SizedRotatingFile is a file rotating logging writer based on the size.
 type SizedRotatingFile struct {
-	lock *sync.Mutex
-	file *os.File
-
+	file        *os.File
 	filePerm    os.FileMode
 	filename    string
 	maxSize     int
@@ -374,37 +235,14 @@ type SizedRotatingFile struct {
 	nbytes      int
 }
 
-func (f *SizedRotatingFile) locked() {
-	if f.lock != nil {
-		f.lock.Lock()
-	}
-}
-
-func (f *SizedRotatingFile) unlocked() {
-	if f.lock != nil {
-		f.lock.Unlock()
-	}
-}
-
 // Close implements io.Closer.
-func (f *SizedRotatingFile) Close() error {
-	f.locked()
-	defer f.unlocked()
-	return f.close()
-}
+func (f *SizedRotatingFile) Close() error { return f.close() }
 
 // Flush flushes the data to the underlying disk.
-func (f *SizedRotatingFile) Flush() error {
-	f.locked()
-	defer f.unlocked()
-	return f.file.Sync()
-}
+func (f *SizedRotatingFile) Flush() error { return f.file.Sync() }
 
 // Write implements io.Writer.
 func (f *SizedRotatingFile) Write(data []byte) (n int, err error) {
-	f.locked()
-	defer f.unlocked()
-
 	if f.file == nil {
 		return 0, errors.New("the file has been closed")
 	}
