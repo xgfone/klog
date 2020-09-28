@@ -25,7 +25,7 @@ type syslogWriter struct {
 	w *syslog.Writer
 }
 
-func (s syslogWriter) Write(level Level, p []byte) (n int, err error) {
+func (s syslogWriter) WriteLevel(level Level, p []byte) (n int, err error) {
 	v := string(bytes.TrimSpace(p))
 	switch level {
 	case LvlTrace:
