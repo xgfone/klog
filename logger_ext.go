@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -39,6 +40,20 @@ func New(name string) *ExtLogger {
 	e := TextEncoder(w, Quote(), EncodeLevel("lvl"), EncodeLogger("logger"),
 		EncodeTime("t", time.RFC3339Nano))
 	return &ExtLogger{Name: name, Level: LvlDebug, Encoder: e}
+}
+
+// NewSimpleLogger returns a new simple logger.
+func NewSimpleLogger(name, level, filePath, fileSize string, fileNum int) (*ExtLogger, error) {
+	log := New(name).WithLevel(NameToLevel(level))
+	if filePath != "" {
+		os.MkdirAll(filepath.Dir(filePath), 0755)
+		wc, err := FileWriter(filePath, fileSize, fileNum)
+		if err != nil {
+			return nil, err
+		}
+		log.Encoder.SetWriter(SafeWriter(wc))
+	}
+	return log, nil
 }
 
 // StdLog converts the ExtLogger to the std log.
