@@ -49,8 +49,8 @@
 //         klog.Ef(fmt.Errorf("error"), "%s log msg", "errorf")
 //
 //         // Output:
-//         // t=2020-09-27T13:52:35.63282+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg=msg
-//         // t=2020-09-27T13:52:35.64482+08:00 lvl=ERROR caller=main.go:19 msg="errorf log msg"
-//         // t=2020-09-27T13:52:35.64482+08:00 lvl=ERROR caller=main.go:20 err=error msg="errorf log msg"
+//         // t=2020-09-27T23:52:35.63282+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg=msg
+//         // t=2020-09-27T23:52:35.64482+08:00 lvl=ERROR caller=main.go:19 msg="errorf log msg"
+//         // t=2020-09-27T23:52:35.64482+08:00 lvl=ERROR caller=main.go:20 err=error msg="errorf log msg"
 //     }
 package klog

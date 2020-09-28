@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2020 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ func (ef *encoderFunc) Encode(r Record) {
 	buf := getBuilder()
 	ef.encode(buf, r)
 	if bs := buf.Bytes(); len(bs) > 0 {
-		ef.writer.Write(r.Lvl, bs)
+		ef.writer.WriteLevel(r.Lvl, bs)
 	}
 	putBuilder(buf)
 }

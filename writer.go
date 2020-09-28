@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2020 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,8 +29,12 @@ var fileFlag = os.O_CREATE | os.O_APPEND | os.O_WRONLY
 
 // Writer is the interface to write the log to the underlying storage.
 type Writer interface {
-	Write(level Level, data []byte) (n int, err error)
+	WriteLevel(level Level, data []byte) (n int, err error)
 	io.Closer
+}
+
+type writerLevel interface {
+	WriteLevel(level Level, data []byte) (n int, err error)
 }
 
 type writerFunc struct {
@@ -38,8 +42,8 @@ type writerFunc struct {
 	close func() error
 }
 
-func (w writerFunc) Write(l Level, p []byte) (int, error) { return w.write(l, p) }
-func (w writerFunc) Close() error                         { return w.close() }
+func (w writerFunc) WriteLevel(l Level, p []byte) (int, error) { return w.write(l, p) }
+func (w writerFunc) Close() error                              { return w.close() }
 
 // WriterFunc adapts the function to Writer.
 func WriterFunc(write func(Level, []byte) (int, error), close ...func() error) Writer {
@@ -53,25 +57,37 @@ func WriterFunc(write func(Level, []byte) (int, error), close ...func() error) W
 //////////////////////////////////////////////////////////////////////////////
 
 type ioWriter struct {
+	Level Level
 	Writer
 }
 
-func (w ioWriter) Write(p []byte) (int, error) {
-	return w.Writer.Write(LvlFatal, p)
+func (w ioWriter) Write(p []byte) (int, error) { return w.WriteLevel(w.Level, p) }
+
+// ToIOWriter converts Writer to io.WriteCloser with the level.
+//
+// lvl is LvlInfo by default, which is only useful when w is the writer
+// like SyslogWriter. Or it should be ignored.
+func ToIOWriter(w Writer, lvl ...Level) io.WriteCloser {
+	level := LvlInfo
+	if len(lvl) > 0 {
+		level = lvl[0]
+	}
+	return ioWriter{Writer: w, Level: level}
 }
 
-// ToIOWriter converts Writer to io.WriteCloser.
-func ToIOWriter(w Writer) io.WriteCloser {
-	return ioWriter{Writer: w}
-}
-
-// //////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 type streamWriter struct {
 	io.Writer
 }
 
-func (w streamWriter) Write(l Level, p []byte) (int, error) { return w.Writer.Write(p) }
+func (w streamWriter) WriteLevel(l Level, p []byte) (int, error) {
+	if wl, ok := w.Writer.(writerLevel); ok {
+		return wl.WriteLevel(l, p)
+	}
+	return w.Writer.Write(p)
+}
+
 func (w streamWriter) Close() (err error) {
 	if c, ok := w.Writer.(io.Closer); ok {
 		err = c.Close()
@@ -80,22 +96,20 @@ func (w streamWriter) Close() (err error) {
 }
 
 // StreamWriter converts io.Writer to WriteCloser.
-func StreamWriter(w io.Writer) Writer {
-	return streamWriter{w}
-}
+func StreamWriter(w io.Writer) Writer { return streamWriter{w} }
 
-// //////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 // DiscardWriter discards all the data.
 func DiscardWriter() Writer {
-	return WriterFunc(func(Level, []byte) (int, error) { return 0, nil })
+	return WriterFunc(func(l Level, p []byte) (int, error) { return len(p), nil })
 }
 
 // LevelWriter filters the logs whose level is less than lvl.
 func LevelWriter(lvl Level, w Writer) Writer {
 	return WriterFunc(func(level Level, p []byte) (n int, err error) {
 		if level >= lvl {
-			n, err = w.Write(level, p)
+			n, err = w.WriteLevel(level, p)
 		}
 		return
 	}, w.Close)
@@ -110,7 +124,7 @@ func SafeWriter(w Writer) Writer {
 	return WriterFunc(func(level Level, p []byte) (int, error) {
 		mu.Lock()
 		defer mu.Unlock()
-		return w.Write(level, p)
+		return w.WriteLevel(level, p)
 	}, w.Close)
 }
 
@@ -119,7 +133,7 @@ func SafeWriter(w Writer) Writer {
 func BufferWriter(w Writer, bufferSize int) Writer {
 	bw := bufio.NewWriterSize(ToIOWriter(w), bufferSize)
 	sw := StreamWriter(bw)
-	return WriterFunc(sw.Write, func() error { bw.Flush(); return w.Close() })
+	return WriterFunc(sw.WriteLevel, func() error { bw.Flush(); return w.Close() })
 }
 
 // NetWriter opens a socket to the given address and writes the log
@@ -143,7 +157,7 @@ func FailoverWriter(writers ...Writer) Writer {
 	_len := len(writers)
 	return WriterFunc(func(level Level, p []byte) (n int, err error) {
 		for i := 0; i < _len; i++ {
-			if n, err = writers[i].Write(level, p); err == nil {
+			if n, err = writers[i].WriteLevel(level, p); err == nil {
 				return
 			}
 		}
@@ -161,7 +175,7 @@ func FailoverWriter(writers ...Writer) Writer {
 func SplitWriter(getWriter func(Level) Writer) Writer {
 	return WriterFunc(func(level Level, p []byte) (n int, err error) {
 		if w := getWriter(level); w != nil {
-			n, err = w.Write(level, p)
+			n, err = w.WriteLevel(level, p)
 		}
 		return
 	}, nil)
@@ -199,7 +213,7 @@ func FileWriter(filename, filesize string, filenum int) (Writer, error) {
 		}
 	}
 
-	return SafeWriter(StreamWriter(w)), nil
+	return StreamWriter(w), nil
 }
 
 // NewSizedRotatingFile returns a new SizedRotatingFile, which is not thread-safe.
