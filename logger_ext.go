@@ -21,6 +21,8 @@ import (
 	"time"
 )
 
+var fixDepth = func(depth int) int { return depth }
+
 // ExtLogger is a extended logger interface.
 type ExtLogger struct {
 	Name    string
@@ -120,7 +122,7 @@ func (l *ExtLogger) Log(lvl Level, depth int, msg string, args []interface{}, fi
 
 	r := Record{
 		Name:   l.Name,
-		Depth:  l.Depth + depth + 1,
+		Depth:  l.Depth + 1 + fixDepth(depth),
 		Lvl:    lvl,
 		Msg:    msg,
 		Ctxs:   l.Fields,
