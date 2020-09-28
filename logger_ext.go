@@ -23,7 +23,7 @@ import (
 
 var fixDepth = func(depth int) int { return depth }
 
-// ExtLogger is a extended logger interface.
+// ExtLogger is a extended logger implemented the Logger and Loggerf interface.
 type ExtLogger struct {
 	Name    string
 	Depth   int
@@ -41,36 +41,27 @@ func New(name string) *ExtLogger {
 	return &ExtLogger{Name: name, Level: LvlDebug, Encoder: e}
 }
 
-// // NewSimpleLogger returns a new simple logger.
-// func NewSimpleLogger(name, level, filePath, fileSize string, fileNum int) (ExtLogger, error) {
-// 	log := New(name).WithLevel(NameToLevel(level))
-// 	if filePath != "" {
-// 		os.MkdirAll(filepath.Dir(filePath), 0755)
-// 		wc, err := FileWriter(filePath, fileSize, fileNum)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		log.Encoder().SetWriter(wc)
-// 	}
-// 	return log, nil
-// }
-
 // StdLog converts the ExtLogger to the std log.
 func (l *ExtLogger) StdLog(prefix string, flags ...int) *log.Logger {
 	flag := log.LstdFlags | log.Lmicroseconds | log.Lshortfile
 	if len(flags) > 0 {
 		flag = flags[0]
 	}
-	return log.New(ToIOWriter(l.Encoder.Writer()), prefix, flag)
+	return log.New(ToIOWriter(l.Encoder.Writer(), l.Level), prefix, flag)
 }
 
 // Clone clones itself and returns a new one.
 func (l *ExtLogger) Clone() *ExtLogger {
+	var fields []Field
+	if len(l.Fields) != 0 {
+		fields = append([]Field{}, l.Fields...)
+	}
+
 	return &ExtLogger{
 		Name:    l.Name,
 		Depth:   l.Depth,
 		Level:   l.Level,
-		Fields:  l.Fields,
+		Fields:  fields,
 		Encoder: l.Encoder,
 	}
 }
