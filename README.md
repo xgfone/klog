@@ -14,6 +14,28 @@ Package `klog` provides an simple, flexible, extensible, powerful and structured
 - Child loggers which inherit and add their own private context.
 - Built-in support for logging to files, syslog, and the network. See `Writer`.
 
+`klog` supports two kinds of the logger interfaces:
+```go
+// Logger is the Key-Value logger interface.
+type Logger interface {
+	Trace(msg string, fields ...Field)
+	Debug(msg string, fields ...Field)
+	Info(msg string, fields ...Field)
+	Warn(msg string, fields ...Field)
+	Error(msg string, fields ...Field)
+	Fatal(mst string, fields ...Field)
+}
+
+// Loggerf is the format logger interface.
+type Loggerf interface {
+	Tracef(msgfmt string, args ...interface{})
+	Debugf(msgfmt string, args ...interface{})
+	Infof(msgfmt string, args ...interface{})
+	Warnf(msgfmt string, args ...interface{})
+	Errorf(msgfmt string, args ...interface{})
+	Fatalf(msgfmt string, args ...interface{})
+}
+```
 
 ## Example
 
@@ -43,7 +65,7 @@ func main() {
 	log.Error("log msg", klog.F("key1", "value1"), klog.F("key2", "value2"))
 
 	// Output:
-	// t=1601185879 logger=name lvl=ERROR caller=main.go:23 key1=value1 key2=value2 msg="log msg"
+	// t=1601185933 logger=name lvl=ERROR caller=main.go:23 key1=value1 key2=value2 msg="log msg"
 }
 ```
 
@@ -92,9 +114,9 @@ func main() {
 	klog.Ef(fmt.Errorf("error"), "%s log msg", "errorf")
 
 	// Output:
-	// t=2020-09-27T13:52:35.63282+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg=msg
-	// t=2020-09-27T13:52:35.64482+08:00 lvl=ERROR caller=main.go:19 msg="errorf log msg"
-	// t=2020-09-27T13:52:35.64482+08:00 lvl=ERROR caller=main.go:20 err=error msg="errorf log msg"
+	// t=2020-09-27T23:52:35.63282+08:00 lvl=ERROR caller=main.go:15 key1=value1 key2=value2 msg=msg
+	// t=2020-09-27T23:52:35.64482+08:00 lvl=ERROR caller=main.go:19 msg="errorf log msg"
+	// t=2020-09-27T23:52:35.64482+08:00 lvl=ERROR caller=main.go:20 err=error msg="errorf log msg"
 }
 ```
 
@@ -114,14 +136,14 @@ type Encoder interface {
 }
 ```
 
-This pakcage has implemented four kinds of encoders, `NothingEncoder`, `TextEncoder`, `JSONEncoder`. It will use `TextEncoder` by default.
+This pakcage has implemented four kinds of encoders, `NothingEncoder`, `TextEncoder`, `JSONEncoder` and `LevelEncoder`. It will use `TextEncoder` by default.
 
 
 ### Writer
 
 ```go
 type Writer interface {
-	Write(level Level, data []byte) (n int, err error)
+	WriteLevel(level Level, data []byte) (n int, err error)
 	io.Closer
 }
 ```
@@ -151,7 +173,7 @@ func main() {
 	klog.Info("hello world", klog.F("key", "value"))
 
 	// Output to file test.log:
-	// t=2020-09-27T13:56:04.0691608+08:00 lvl=INFO key=value msg="hello world"
+	// t=2020-09-27T23:56:04.0691608+08:00 lvl=INFO key=value msg="hello world"
 }
 ```
 
@@ -175,10 +197,10 @@ Go 1.13.4
 
 **Benchmark Package:**
 
-|               Function               |    ops    | ns/op | bytes/opt | allocs/op
-|--------------------------------------|-----------|-------|-----------|----------
-|BenchmarkKlogNothingEncoder-4         | 273440714 | 4     |     0     |    0
-|BenchmarkKlogTextEncoder-4            |  30770728 | 43    |     0     |    0
-|BenchmarkKlogJSONEncoder-4            |  41626033 | 27    |     0     |    0
-|BenchmarkKlogTextEncoder10CtxFields-4 |  10344880 | 149   |     0     |    0
-|BenchmarkKlogJSONEncoder10CtxFields-4 |   7692381 | 165   |     0     |    0
+|               Function               |      ops      | ns/op | bytes/opt | allocs/op
+|--------------------------------------|--------------:|------:|-----------|----------
+|BenchmarkKlogNothingEncoder-4         | 273, 440, 714 | 4     |     0     |    0
+|BenchmarkKlogTextEncoder-4            |  30, 770, 728 | 43    |     0     |    0
+|BenchmarkKlogJSONEncoder-4            |  41, 626, 033 | 27    |     0     |    0
+|BenchmarkKlogTextEncoder10CtxFields-4 |  10, 344, 880 | 149   |     0     |    0
+|BenchmarkKlogJSONEncoder10CtxFields-4 |   7, 692, 381 | 165   |     0     |    0
