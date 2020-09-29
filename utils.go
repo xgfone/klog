@@ -15,7 +15,6 @@
 package klog
 
 import (
-	"fmt"
 	"strconv"
 	"sync"
 )
@@ -27,14 +26,6 @@ var builderPool = sync.Pool{New: func() interface{} { return NewBuilder(BuilderS
 
 func getBuilder() *Builder  { return builderPool.Get().(*Builder) }
 func putBuilder(b *Builder) { b.Reset(); builderPool.Put(b) }
-
-// Sprintf is equal to fmt.Sprintf(msg, args...).
-func Sprintf(msg string, args ...interface{}) string {
-	if len(args) == 0 {
-		return msg
-	}
-	return fmt.Sprintf(msg, args...)
-}
 
 // ParseSize parses the size string. The size maybe have a unit suffix,
 // such as "123", "123M, 123G". Valid size units are "b", "B", "k", "K",
