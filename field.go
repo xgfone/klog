@@ -37,3 +37,10 @@ func E(err error) Field { return field{key: "err", value: err} }
 // F returns a new Field. If value is "func() interface{}" or "func() string",
 // it will be evaluated when the log is emitted, that's, it is lazy.
 func F(key string, value interface{}) Field { return field{key: key, value: value} }
+
+// FieldFunc returns a higher-order function to create the field with the key.
+func FieldFunc(key string) func(value interface{}) Field {
+	return func(value interface{}) Field {
+		return F(key, value)
+	}
+}
