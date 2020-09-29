@@ -157,7 +157,8 @@ func (l *ExtLogger) Warn(msg string, fields ...Field) { l.Log(LvlWarn, 1, msg, n
 // Error implements the interface Logger.
 func (l *ExtLogger) Error(msg string, fields ...Field) { l.Log(LvlError, 1, msg, nil, fields) }
 
-// Fatal implements the interface Logger.
+// Fatal implements the interface Logger, but call the exit functions
+// in CallOnExit before the program exits.
 func (l *ExtLogger) Fatal(msg string, fields ...Field) { l.Log(LvlFatal, 1, msg, nil, fields) }
 
 // Tracef implements the interface Loggerf.
@@ -175,7 +176,8 @@ func (l *ExtLogger) Warnf(msg string, args ...interface{}) { l.Log(LvlWarn, 1, m
 // Errorf implements the interface Loggerf.
 func (l *ExtLogger) Errorf(msg string, args ...interface{}) { l.Log(LvlError, 1, msg, args, nil) }
 
-// Fatalf implements the interface Loggerf.
+// Fatalf implements the interface Loggerf, but call the exit functions
+// in CallOnExit before the program exits.
 func (l *ExtLogger) Fatalf(msg string, args ...interface{}) { l.Log(LvlFatal, 1, msg, args, nil) }
 
 // Printf is equal to l.Infof(msg, args...).

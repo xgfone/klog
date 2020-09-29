@@ -95,7 +95,7 @@ func (w streamWriter) Close() (err error) {
 	return
 }
 
-// StreamWriter converts io.Writer to WriteCloser.
+// StreamWriter converts io.Writer to Writer.
 func StreamWriter(w io.Writer) Writer { return streamWriter{w} }
 
 //////////////////////////////////////////////////////////////////////////////
