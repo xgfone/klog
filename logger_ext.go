@@ -27,9 +27,9 @@ var fixDepth = func(depth int) int { return depth }
 // ExtLogger is a extended logger implemented the Logger and Loggerf interface.
 type ExtLogger struct {
 	Name    string
+	Ctxs    []Field
 	Depth   int
 	Level   Level
-	Fields  []Field
 	Encoder Encoder
 }
 
@@ -67,16 +67,16 @@ func (l *ExtLogger) StdLog(prefix string, flags ...int) *log.Logger {
 
 // Clone clones itself and returns a new one.
 func (l *ExtLogger) Clone() *ExtLogger {
-	var fields []Field
-	if len(l.Fields) != 0 {
-		fields = append([]Field{}, l.Fields...)
+	var ctxs []Field
+	if len(l.Ctxs) != 0 {
+		ctxs = append([]Field{}, l.Ctxs...)
 	}
 
 	return &ExtLogger{
+		Ctxs:    ctxs,
 		Name:    l.Name,
 		Depth:   l.Depth,
 		Level:   l.Level,
-		Fields:  fields,
 		Encoder: l.Encoder,
 	}
 }
@@ -110,9 +110,9 @@ func (l *ExtLogger) WithDepth(depth int) *ExtLogger {
 }
 
 // WithCtx returns a new ExtLogger with the new context fields.
-func (l *ExtLogger) WithCtx(fields ...Field) *ExtLogger {
+func (l *ExtLogger) WithCtx(ctxs ...Field) *ExtLogger {
 	ll := l.Clone()
-	ll.Fields = append(ll.Fields, fields...)
+	ll.Ctxs = append(ll.Ctxs, ctxs...)
 	return ll
 }
 
@@ -131,7 +131,7 @@ func (l *ExtLogger) Log(lvl Level, depth int, msg string, args []interface{}, fi
 		Depth:  l.Depth + 1 + fixDepth(depth),
 		Lvl:    lvl,
 		Msg:    msg,
-		Ctxs:   l.Fields,
+		Ctxs:   l.Ctxs,
 		Fields: fields,
 	}
 	l.Encoder.Encode(r)
