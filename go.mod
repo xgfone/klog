@@ -1,4 +1,4 @@
-module github.com/xgfone/klog/v3
+module github.com/xgfone/klog/v4
 
 require github.com/go-stack/stack v1.8.0
 
