@@ -14,6 +14,8 @@
 
 package klog
 
+import "sync"
+
 type field struct {
 	key   string
 	value interface{}
@@ -68,3 +70,74 @@ type fieldError struct {
 
 func (e fieldError) Unwrap() error   { return e.error }
 func (e fieldError) Fields() []Field { return e.fields }
+
+var fbPool4 = sync.Pool{New: func() interface{} { return make([]Field, 0, 4) }}
+var fbPool8 = sync.Pool{New: func() interface{} { return make([]Field, 0, 8) }}
+var fbPool16 = sync.Pool{New: func() interface{} { return make([]Field, 0, 16) }}
+var fbPool32 = sync.Pool{New: func() interface{} { return make([]Field, 0, 32) }}
+
+// FieldBuilder is used to build a set of fields.
+type FieldBuilder struct {
+	fields []Field
+}
+
+// NewFieldBuilder returns a new FieldBuilder with the capacity of the fields.
+func NewFieldBuilder(cap int) FieldBuilder {
+	var fields []Field
+	if cap > 16 {
+		fields = fbPool32.Get().([]Field)
+	} else if cap > 8 {
+		fields = fbPool16.Get().([]Field)
+	} else if cap > 4 {
+		fields = fbPool8.Get().([]Field)
+	} else {
+		fields = fbPool4.Get().([]Field)
+	}
+	return FieldBuilder{fields: fields}
+}
+
+// FB is the alias of NewFieldBuilder.
+func FB(cap int) FieldBuilder { return NewFieldBuilder(cap) }
+
+// Field appends the field with the key and value.
+func (fb FieldBuilder) Field(key string, value interface{}) FieldBuilder {
+	fb.fields = append(fb.fields, F(key, value))
+	return fb
+}
+
+// F is the alias of Field.
+func (fb FieldBuilder) F(key string, value interface{}) FieldBuilder {
+	return fb.Field(key, value)
+}
+
+// E appends the error field.
+func (fb FieldBuilder) E(err error, fields ...Field) FieldBuilder {
+	if err != nil {
+		if len(fields) == 0 {
+			fb.fields = append(fb.fields, E(err))
+		} else {
+			fb.fields = append(fb.fields, E(FE(err, fields...)))
+		}
+	}
+	return fb
+}
+
+// Fields returns the built fields.
+func (fb FieldBuilder) Fields() []Field { return fb.fields }
+
+// Reset resets the fields and reuses the underlying memory.
+func (fb FieldBuilder) Reset() { fb.fields = fb.fields[:0] }
+
+// Release releases the fields into the pool.
+func (fb FieldBuilder) Release() {
+	fb.Reset()
+	if cap := len(fb.fields); cap > 16 {
+		fbPool32.Put(fb.fields)
+	} else if cap > 8 {
+		fbPool16.Put(fb.fields)
+	} else if cap > 4 {
+		fbPool8.Put(fb.fields)
+	} else {
+		fbPool4.Put(fb.fields)
+	}
+}
