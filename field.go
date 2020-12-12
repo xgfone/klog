@@ -44,3 +44,27 @@ func FieldFunc(key string) func(value interface{}) Field {
 		return F(key, value)
 	}
 }
+
+// FieldError is the error interface with some fields.
+type FieldError interface {
+	Fields() []Field
+	error
+}
+
+// FE is the alias of NewFieldError.
+func FE(err error, fields ...Field) FieldError {
+	return NewFieldError(err, fields...)
+}
+
+// NewFieldError returns a new FieldError.
+func NewFieldError(err error, fields ...Field) FieldError {
+	return fieldError{error: err, fields: fields}
+}
+
+type fieldError struct {
+	fields []Field
+	error
+}
+
+func (e fieldError) Unwrap() error   { return e.error }
+func (e fieldError) Fields() []Field { return e.fields }

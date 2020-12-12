@@ -48,3 +48,33 @@ func TestLoggerJSONEncoder(t *testing.T) {
 		t.Error(v)
 	}
 }
+
+type serror string
+
+func (e serror) Error() string { return string(e) }
+
+func TestFieldError(t *testing.T) {
+	err := serror("error")
+	buf := NewBuilder(128)
+	logger := New("")
+	logger.Encoder = JSONEncoder(StreamWriter(buf))
+	logger.Info("test FieldError with json encoder", E(FE(err)))
+	logger.Info("test FieldError with json encoder", E(FE(err, F("k1", "v1"))))
+	logger.Info("test FieldError with json encoder", E(FE(err, F("k2", "v2"), F("k3", "v3"))))
+
+	logger.Encoder = TextEncoder(StreamWriter(buf))
+	logger.Info("test FieldError with json encoder", E(FE(err)))
+	logger.Info("test FieldError with json encoder", E(FE(err, F("k4", "v4"))))
+	logger.Info("test FieldError with text encoder", E(FE(err, F("k5", "v5"), F("k6", "v6"))))
+
+	expect := `{"err":"error","msg":"test FieldError with json encoder"}
+{"err":"error","k1":"v1","msg":"test FieldError with json encoder"}
+{"err":"error","k2":"v2","k3":"v3","msg":"test FieldError with json encoder"}
+err=error msg=test FieldError with json encoder
+err=error k4=v4 msg=test FieldError with json encoder
+err=error k5=v5 k6=v6 msg=test FieldError with text encoder
+`
+	if s := buf.String(); s != expect {
+		t.Error(s)
+	}
+}

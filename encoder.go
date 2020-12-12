@@ -203,7 +203,15 @@ func textEncodeFields(buf *Builder, fields []Field, depth int, quote bool, timeF
 			value = field.Value()
 		}
 
+		appendSpace := true
 		switch v := value.(type) {
+		case FieldError:
+			appendString(buf, v.Error(), quote)
+			if fields := v.Fields(); len(fields) != 0 {
+				appendSpace = false
+				buf.WriteByte(' ')
+				textEncodeFields(buf, fields, depth-1, quote, timeFmt)
+			}
 		case string:
 			appendString(buf, v, quote)
 		case error:
@@ -224,7 +232,9 @@ func textEncodeFields(buf *Builder, fields []Field, depth int, quote bool, timeF
 			}
 		}
 
-		buf.WriteByte(' ')
+		if appendSpace {
+			buf.WriteByte(' ')
+		}
 	}
 }
 
@@ -289,18 +299,28 @@ func jsonEncodeFields(buf *Builder, fields []Field, depth int, timeFmt string) {
 		}
 
 		// Value
+		appendSpace := true
 		switch v := value.(type) {
 		case time.Time:
 			buf.WriteByte('"')
 			encodeTime(buf, v, timeFmt)
 			buf.WriteByte('"')
+		case FieldError:
+			buf.AppendJSONString(v.Error())
+			if fields := v.Fields(); len(fields) != 0 {
+				appendSpace = false
+				buf.WriteByte(',')
+				jsonEncodeFields(buf, fields, depth-1, timeFmt)
+			}
 		default:
 			if err := buf.AppendJSON(v); err != nil {
 				buf.AppendJSONString(fmt.Sprintf(`<klog.TextEncoder:Error:%s>`, err.Error()))
 			}
 		}
 
-		buf.WriteByte(',')
+		if appendSpace {
+			buf.WriteByte(',')
+		}
 	}
 }
 
