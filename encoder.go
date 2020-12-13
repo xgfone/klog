@@ -299,7 +299,7 @@ func jsonEncodeFields(buf *Builder, fields []Field, depth int, timeFmt string) {
 		}
 
 		// Value
-		appendSpace := true
+		appendComma := true
 		switch v := value.(type) {
 		case time.Time:
 			buf.WriteByte('"')
@@ -308,7 +308,7 @@ func jsonEncodeFields(buf *Builder, fields []Field, depth int, timeFmt string) {
 		case FieldError:
 			buf.AppendJSONString(v.Error())
 			if fields := v.Fields(); len(fields) != 0 {
-				appendSpace = false
+				appendComma = false
 				buf.WriteByte(',')
 				jsonEncodeFields(buf, fields, depth-1, timeFmt)
 			}
@@ -318,7 +318,7 @@ func jsonEncodeFields(buf *Builder, fields []Field, depth int, timeFmt string) {
 			}
 		}
 
-		if appendSpace {
+		if appendComma {
 			buf.WriteByte(',')
 		}
 	}
