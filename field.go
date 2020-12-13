@@ -47,29 +47,34 @@ func FieldFunc(key string) func(value interface{}) Field {
 	}
 }
 
+// FieldReleaser is used to get and release the fields.
+type FieldReleaser interface {
+	Fields() []Field
+	Release()
+}
+
 // FieldError is the error interface with some fields.
 type FieldError interface {
-	Fields() []Field
+	FieldReleaser
 	error
 }
 
 // FE is the alias of NewFieldError.
-func FE(err error, fields ...Field) FieldError {
-	return NewFieldError(err, fields...)
+func FE(err error, fields FieldReleaser) FieldError {
+	return NewFieldError(err, fields)
 }
 
 // NewFieldError returns a new FieldError.
-func NewFieldError(err error, fields ...Field) FieldError {
-	return fieldError{error: err, fields: fields}
+func NewFieldError(err error, fields FieldReleaser) FieldError {
+	return fieldError{error: err, FieldReleaser: fields}
 }
 
 type fieldError struct {
-	fields []Field
+	FieldReleaser
 	error
 }
 
-func (e fieldError) Unwrap() error   { return e.error }
-func (e fieldError) Fields() []Field { return e.fields }
+func (e fieldError) Unwrap() error { return e.error }
 
 var fbPool4 = sync.Pool{New: func() interface{} { return make([]Field, 0, 4) }}
 var fbPool8 = sync.Pool{New: func() interface{} { return make([]Field, 0, 8) }}
@@ -110,14 +115,10 @@ func (fb FieldBuilder) F(key string, value interface{}) FieldBuilder {
 	return fb.Field(key, value)
 }
 
-// E appends the error field.
-func (fb FieldBuilder) E(err error, fields ...Field) FieldBuilder {
+// E appends the error field if err is not equal to nil.
+func (fb FieldBuilder) E(err error) FieldBuilder {
 	if err != nil {
-		if len(fields) == 0 {
-			fb.fields = append(fb.fields, E(err))
-		} else {
-			fb.fields = append(fb.fields, E(FE(err, fields...)))
-		}
+		fb.fields = append(fb.fields, E(err))
 	}
 	return fb
 }
