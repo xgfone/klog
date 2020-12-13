@@ -78,3 +78,15 @@ err=error k5=v5 k6=v6 msg=test FieldError with text encoder
 		t.Error(s)
 	}
 }
+
+func TestFieldBuilder_Reset(t *testing.T) {
+	fb := FB(4).F("k1", "v1").F("k2", "v2")
+	if fields := fb.Fields(); len(fields) != 2 {
+		t.Error(fields)
+	}
+
+	fb.Reset()
+	if fields := fb.Fields(); len(fields) != 0 {
+		t.Error(fields)
+	}
+}

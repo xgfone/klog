@@ -126,7 +126,7 @@ func (fb FieldBuilder) E(err error, fields ...Field) FieldBuilder {
 func (fb FieldBuilder) Fields() []Field { return fb.fields }
 
 // Reset resets the fields and reuses the underlying memory.
-func (fb FieldBuilder) Reset() { fb.fields = fb.fields[:0] }
+func (fb *FieldBuilder) Reset() { fb.fields = fb.fields[:0] }
 
 // Release releases the fields into the pool.
 func (fb FieldBuilder) Release() {
