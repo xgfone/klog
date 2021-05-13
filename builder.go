@@ -174,6 +174,7 @@ func (b *Builder) AppendTime(t time.Time, layout string) {
 // Notice: for map[string]interface{} and map[string]string, they are optimized,
 // so the order that the key-value is output is not determined.
 func (b *Builder) AppendAny(any interface{}) (ok bool, err error) {
+	ok = true
 	switch v := any.(type) {
 	case nil:
 		b.WriteString("<nil>")
@@ -216,11 +217,10 @@ func (b *Builder) AppendAny(any interface{}) (ok bool, err error) {
 	case fmt.Stringer:
 		b.WriteString(v.String())
 	case encoding.TextMarshaler:
-		data, err := v.MarshalText()
-		if err != nil {
-			return true, err
+		var data []byte
+		if data, err = v.MarshalText(); err == nil {
+			b.Write(data)
 		}
-		b.Write(data)
 	case []interface{}:
 		b.WriteByte('[')
 		for i, _v := range v {
@@ -279,11 +279,13 @@ func (b *Builder) AppendAny(any interface{}) (ok bool, err error) {
 	default:
 		kind := reflect.ValueOf(v).Kind()
 		if kind != reflect.Map && kind != reflect.Slice && kind != reflect.Array {
-			return false, nil
+			ok = false
+		} else {
+			fmt.Fprintf(b, "%v", v)
 		}
-		fmt.Fprintf(b, "%v", v)
 	}
-	return true, nil
+
+	return
 }
 
 // AppendAnyFmt is the same as AppendAny(any), but it will use
